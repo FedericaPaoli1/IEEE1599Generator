@@ -3,7 +3,7 @@ package com.ieee1599generator;
 import java.io.File;
 import java.time.Duration;
 import java.util.ArrayList;
-import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Random;
@@ -22,8 +22,6 @@ import javax.xml.transform.TransformerException;
 import javax.xml.transform.TransformerFactory;
 import javax.xml.transform.dom.DOMSource;
 import javax.xml.transform.stream.StreamResult;
-import org.apache.commons.collections4.MultiValuedMap;
-import org.apache.commons.collections4.multimap.ArrayListValuedHashMap;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 
@@ -43,9 +41,41 @@ public class Generator {
         return (int) (pieceLength / (oneBeatLength * beatsNumber));
     }
 
-    public int getRandomNumber(int min, int max) {
+    public int getRandomInteger(int min, int max) {
         Random random = new Random();
-        return random.nextInt(max - min) + min;
+        return random.nextInt((max - min) + 1) + min;
+    }
+
+    public List<Integer> getRandomNonRepeatingIntegers(int size, int min, int max) {
+        List<Integer> numbers = new ArrayList();
+        Random random = new Random();
+        while (numbers.size() < size) {
+            int randomNumber = random.nextInt((max - min) + 1) + min;
+            //Check for duplicate values
+            if (!numbers.contains(randomNumber)) {
+                numbers.add(randomNumber);
+            }
+        }
+
+        return numbers;
+    }
+
+    public List<Character> getRandomNonRepeatingChars(List<Character> chars) {
+        List<Character> randomizedChars = new ArrayList();
+        int min = 0;
+        int max = chars.size() - 1;
+        Random random = new Random();
+        while (randomizedChars.size() < chars.size()) {
+            int randomIndex = random.nextInt((max - min) + 1) + min;
+            char c = chars.get(randomIndex);
+            //Check for duplicate values
+            if (!randomizedChars.contains(c)) {
+                randomizedChars.add(c);
+                System.out.println(c);
+            }
+        }
+
+        return randomizedChars;
     }
 
     public double getRandomNote(Map<Double, int[]> notesMap) {
@@ -66,12 +96,16 @@ public class Generator {
         String metre = 4 + ":" + 4;
         int[] metreInNumbers = {Integer.parseInt(String.valueOf(metre.charAt(0))), Integer.parseInt(String.valueOf(metre.charAt(2)))};
         int instrumentsNumber = 5;
-        int maxNumberOfPlayedNotes = 10;
+        int maxNumberOfPlayedNotes = 150;
         int maxNumberOfNotesInAChord = 3;
-        int[] minDuration = {32, 1};
+        int[] minDuration = {8, 1};
         int[] maxDuration = {1, 1};
+        int minHeight = 0;
+        int maxHeight = 11;
 
         //
+        
+        
         long seconds = Duration.parse(pieceLength).getSeconds();
         System.out.println("Piece length: " + seconds);
         int measuresNumber = g.getMeasuresNumber(bpm, seconds, metreInNumbers);
@@ -84,8 +118,25 @@ public class Generator {
 
         double noteValueForAMeasure = (double) 1 / metreInNumbers[1];
         System.out.println("Value of a note in a measure: " + 1 + "/" + metreInNumbers[1] + " = " + noteValueForAMeasure);
-        
+
+        int maxNumberOfEvents = (int) ((((double) 1 / metreInNumbers[1]) / ((double) minDuration[1] / minDuration[0])) * metreInNumbers[0]);
+        System.out.println("Max number of events: " + maxNumberOfEvents);
+
         List<Element> eventsList = new ArrayList<>();
+
+        Map<Integer, String> pitchesMap = new TreeMap<>();
+        pitchesMap.put(0, "C");
+        pitchesMap.put(1, "C-sharp");
+        pitchesMap.put(2, "D");
+        pitchesMap.put(3, "D-sharp");
+        pitchesMap.put(4, "E");
+        pitchesMap.put(5, "F");
+        pitchesMap.put(6, "F-sharp");
+        pitchesMap.put(7, "G");
+        pitchesMap.put(8, "G-sharp");
+        pitchesMap.put(9, "A");
+        pitchesMap.put(10, "B-flat");
+        pitchesMap.put(11, "B");
 
         /* Printing notesMap
         System.out.println("Notes map keys: " + notesMap.keySet());
@@ -138,7 +189,7 @@ public class Generator {
                 eventsList.add(event);
                 firstEventsDefined = true;
             }
-            
+
             for (int i = 1; i <= instrumentsNumber; i++) {
                 Element event = doc.createElement("event");
                 event.setAttribute("id", "TimeSignature_Instrument_" + i + "_1");
@@ -149,15 +200,15 @@ public class Generator {
             }
 
             for (int j = 1; j <= measuresNumber; j++) {
-                System.out.println("MEASURE " + j);
-                int randomInstrumentsNumber = g.getRandomNumber(1, instrumentsNumber + 1); // TODO extract always all instruments, but randomly
+                //System.out.println("MEASURE " + j);
+                List<Integer> randomInstruments = g.getRandomNonRepeatingIntegers(instrumentsNumber, 1, instrumentsNumber);
                 if (firstEventsDefined) {
-                    for (int i = 1; i <= randomInstrumentsNumber; i++) {
-                        int notesNumber = g.getRandomNumber(1, maxNumberOfPlayedNotes + 1);
-                        System.out.println("Notes number for instrument " + i + " : " + notesNumber);
-                        for (int k = 1; k < notesNumber; k++) {
+                    for (int i = 0; i < randomInstruments.size(); i++) {
+                        int eventsNumber = g.getRandomInteger(1, maxNumberOfEvents);
+                        //System.out.println("Events number for instrument " + randomInstruments.get(i) + " : " + eventsNumber);
+                        for (int k = 1; k < eventsNumber; k++) {
                             Element event = doc.createElement("event");
-                            event.setAttribute("id", "Instrument_" + i + "_voice0_measure" + j + "_ev" + k);
+                            event.setAttribute("id", "Instrument_" + randomInstruments.get(i) + "_voice0_measure" + j + "_ev" + k);
                             event.setAttribute("timing", "null");
                             event.setAttribute("hpos", "null");
                             spine.appendChild(event);
@@ -166,12 +217,12 @@ public class Generator {
                     }
                     firstEventsDefined = false;
                 } else {
-                    for (int i = 1; i <= randomInstrumentsNumber; i++) {
-                        int notesNumber = g.getRandomNumber(1, maxNumberOfPlayedNotes + 1);
-                        System.out.println("Notes number for instrument " + i + " : " + notesNumber);
-                        for (int k = 0; k < notesNumber; k++) {
+                    for (int i = 0; i < randomInstruments.size(); i++) {
+                        int eventsNumber = g.getRandomInteger(1, maxNumberOfEvents);
+                        //System.out.println("Events number for instrument " + randomInstruments.get(i) + " : " + eventsNumber);
+                        for (int k = 0; k < eventsNumber; k++) {
                             Element event = doc.createElement("event");
-                            event.setAttribute("id", "Instrument_" + i + "_voice0_measure" + j + "_ev" + k);
+                            event.setAttribute("id", "Instrument_" + randomInstruments.get(i) + "_voice0_measure" + j + "_ev" + k);
                             event.setAttribute("timing", "null");
                             event.setAttribute("hpos", "null");
                             spine.appendChild(event);
@@ -189,6 +240,7 @@ public class Generator {
             los.appendChild(staffList);
 
             for (int i = 1; i <= instrumentsNumber; i++) {
+                System.out.println("INSTRUMENT " + i);
                 Element staff = doc.createElement("staff");
                 staff.setAttribute("id", "Instrument_" + i + "_staff");
                 staff.setAttribute("line_number", "5");
@@ -214,6 +266,7 @@ public class Generator {
                 voiceList.appendChild(voiceItem);
 
                 for (int j = 1; j <= measuresNumber; j++) {
+                    System.out.println("MEASURE " + j);
                     Element measure = doc.createElement("measure");
                     measure.setAttribute("number", "" + j);
                     part.appendChild(measure);
@@ -223,44 +276,99 @@ public class Generator {
                     measure.appendChild(voice);
 
                     String s = "Instrument_" + i + "_voice0_measure" + j + "_";
-                    var eventsNumber = eventsList.stream().filter(e -> e.getAttribute("id").contains(s)).count();
-                    System.out.println(s);
-                    System.out.println(eventsNumber);
-                    
-                    for (int k = 0; k < eventsNumber; k++) {
+                    int eventsNumber = (int) eventsList.stream().filter(e -> e.getAttribute("id").contains(s)).count();
+                    System.out.println("Events number: " + eventsNumber);
 
-                        Element chord = doc.createElement("chord");
-                        chord.setAttribute("event_ref", "Instrument_" + i + "_voice0_measure" + j + "_ev" + k);
-                        voice.appendChild(chord);
+                    int notesNumber = g.getRandomInteger(1, maxNumberOfPlayedNotes);
+                    System.out.println("Notes number: " + notesNumber);
+                    int notesNumberInAMeasure = notesNumber / measuresNumber;
+                    if (notesNumberInAMeasure > eventsNumber) {
+                        notesNumberInAMeasure = eventsNumber;
+                    }
+                    System.out.println("Notes number in a measure: " + notesNumberInAMeasure);
 
-                        double randomNote = g.getRandomNote(notesMap);
-                        while (randomNote * metreInNumbers[0] > 1) {
-                            randomNote = g.getRandomNote(notesMap);
+                    int restsNumberInAMeasure = eventsNumber - notesNumberInAMeasure;
+                    System.out.println("Rests number: " + restsNumberInAMeasure);
+
+                    List<Character> notesAndRests = new ArrayList<>();
+                    int count = 0;
+                    while (count < eventsNumber) {
+                        for (int n = 1; n <= notesNumberInAMeasure; n++) {
+                            notesAndRests.add('N');
+                            count++;
                         }
+                        for (int r = 1; r <= restsNumberInAMeasure; r++) {
+                            notesAndRests.add('R');
+                            count++;
+                        }
+                    }
 
-                        if (randomNote == 1) {
-                            Element duration = doc.createElement("duration");
-                            duration.setAttribute("den", "" + metreInNumbers[1]);
-                            duration.setAttribute("num", "" + metreInNumbers[0]);
-                            chord.appendChild(duration);
+                    Collections.shuffle(notesAndRests);
+                    notesAndRests.forEach(c -> {
+                        System.out.println(c);
+                    });
+
+                    for (int k = 0; k < notesAndRests.size(); k++) {
+
+                        if (notesAndRests.get(k) == 'N') {
+                            Element chord = doc.createElement("chord");
+
+                            chord.setAttribute("event_ref", "Instrument_" + i + "_voice0_measure" + j + "_ev" + k);
+                            voice.appendChild(chord);
+
+                            double randomNote = g.getRandomNote(notesMap);
+                            while (randomNote * metreInNumbers[0] > 1) {
+                                randomNote = g.getRandomNote(notesMap);
+                            }
+
+                            if (randomNote == 1) {
+                                Element duration = doc.createElement("duration");
+                                duration.setAttribute("den", "" + metreInNumbers[1]);
+                                duration.setAttribute("num", "" + metreInNumbers[0]);
+                                chord.appendChild(duration);
+                            } else {
+                                Element duration = doc.createElement("duration");
+                                duration.setAttribute("den", "" + notesMap.get(randomNote)[0]);
+                                duration.setAttribute("num", "" + 1);
+                                chord.appendChild(duration);
+                            }
                         } else {
-                            Element duration = doc.createElement("duration");
-                            duration.setAttribute("den", "" + notesMap.get(randomNote)[0]);
-                            duration.setAttribute("num", "" + 1);
-                            chord.appendChild(duration);
+                            Element rest = doc.createElement("rest");
+
+                            rest.setAttribute("event_ref", "Instrument_" + i + "_voice0_measure" + j + "_ev" + k);
+                            voice.appendChild(rest);
+
+                            double randomNote = g.getRandomNote(notesMap);
+                            while (randomNote * metreInNumbers[0] > 1) {
+                                randomNote = g.getRandomNote(notesMap);
+                            }
+
+                            if (randomNote == 1) {
+                                Element duration = doc.createElement("duration");
+                                duration.setAttribute("den", "" + metreInNumbers[1]);
+                                duration.setAttribute("num", "" + metreInNumbers[0]);
+                                rest.appendChild(duration);
+                            } else {
+                                Element duration = doc.createElement("duration");
+                                duration.setAttribute("den", "" + notesMap.get(randomNote)[0]);
+                                duration.setAttribute("num", "" + 1);
+                                rest.appendChild(duration);
+                            }
                         }
-                        int randomNotesNumberInAChord = g.getRandomNumber(1, maxNumberOfNotesInAChord + 1);
-                        /*for (int k = 1; k <= randomNotesNumberInAChord; k++) {
+
+                    }
+
+                    int randomNotesNumberInAChord = g.getRandomInteger(1, maxNumberOfNotesInAChord);
+                    /*for (int k = 1; k <= randomNotesNumberInAChord; k++) {
                         // k: number of noteheads
                     }*/
 
-                    }
                 }
             }
-            
-            // TODO
-            // insert chords and rests
 
+            // TODO
+            // define pitches
+            
             // salvataggio
             Result output = new StreamResult(new File("ieee1599.xml"));
             Source input = new DOMSource(doc);
