@@ -97,15 +97,13 @@ public class Generator {
         int[] metreInNumbers = {Integer.parseInt(String.valueOf(metre.charAt(0))), Integer.parseInt(String.valueOf(metre.charAt(2)))};
         int instrumentsNumber = 5;
         int maxNumberOfPlayedNotes = 150;
-        int maxNumberOfNotesInAChord = 3;
         int[] minDuration = {8, 1};
         int[] maxDuration = {1, 1};
         int minHeight = 0;
         int maxHeight = 11;
+        int maxNumberOfNotesInAChord = 3;
 
         //
-        
-        
         long seconds = Duration.parse(pieceLength).getSeconds();
         System.out.println("Piece length: " + seconds);
         int measuresNumber = g.getMeasuresNumber(bpm, seconds, metreInNumbers);
@@ -135,8 +133,11 @@ public class Generator {
         pitchesMap.put(7, "G");
         pitchesMap.put(8, "G-sharp");
         pitchesMap.put(9, "A");
-        pitchesMap.put(10, "B-flat");
+        pitchesMap.put(10, "B-sharp");
         pitchesMap.put(11, "B");
+
+        int octavesNumber = 10;
+
 
         /* Printing notesMap
         System.out.println("Notes map keys: " + notesMap.keySet());
@@ -304,10 +305,19 @@ public class Generator {
                     }
 
                     Collections.shuffle(notesAndRests);
-                    notesAndRests.forEach(c -> {
-                        System.out.println(c);
-                    });
 
+                    /*notesAndRests.forEach(c -> {
+                        System.out.println(c);
+                    });*/
+                    List<Integer> randomPitches = g.getRandomNonRepeatingIntegers(notesAndRests.size(), minHeight, maxHeight);
+
+                    int notesInAChord = g.getRandomInteger(1, maxNumberOfNotesInAChord);
+                    
+                    System.out.println("Notes in a chord: " + notesInAChord);
+
+                    /*randomPitches.forEach(p -> {
+                        System.out.println(p);
+                    });*/
                     for (int k = 0; k < notesAndRests.size(); k++) {
 
                         if (notesAndRests.get(k) == 'N') {
@@ -332,6 +342,29 @@ public class Generator {
                                 duration.setAttribute("num", "" + 1);
                                 chord.appendChild(duration);
                             }
+
+                            int h = 0;
+                            for (h = 1; h <= notesInAChord; h++) {
+                                Element notehead = doc.createElement("notehead");
+                                chord.appendChild(notehead);
+
+                                Element pitch = doc.createElement("pitch");
+                                pitch.setAttribute("actual_accidental", "natural");
+                                int randomOctave = g.getRandomInteger(0, octavesNumber);
+                                pitch.setAttribute("octave", "" + randomOctave);
+                                pitch.setAttribute("step", "" + pitchesMap.get(randomPitches.get(k)).charAt(0));
+                                notehead.appendChild(pitch);
+
+                                if (pitchesMap.get(randomPitches.get(k)).length() > 1) {
+                                    pitch.setAttribute("actual_accidental", "sharp");
+                                    Element printedAccidentals = doc.createElement("printed_accidentals");
+                                    notehead.appendChild(printedAccidentals);
+                                    Element sharp = doc.createElement("sharp");
+                                    printedAccidentals.appendChild(sharp);
+                                }
+                            }
+                            k += h;
+
                         } else {
                             Element rest = doc.createElement("rest");
 
@@ -368,7 +401,6 @@ public class Generator {
 
             // TODO
             // define pitches
-            
             // salvataggio
             Result output = new StreamResult(new File("ieee1599.xml"));
             Source input = new DOMSource(doc);
