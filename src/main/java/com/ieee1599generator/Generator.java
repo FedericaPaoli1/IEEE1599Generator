@@ -78,11 +78,23 @@ public class Generator {
         return randomizedChars;
     }
 
-    public double getRandomNote(Map<Double, int[]> notesMap) {
-        Double[] keySetArray = notesMap.keySet().toArray(new Double[notesMap.keySet().size()]);
+    public double getRandomNote(Map<Double, int[]> inputMap) {
+        Double[] keySetArray = inputMap.keySet().toArray(new Double[inputMap.keySet().size()]);
         Random random = new Random();
-        int randomIndex = random.nextInt(notesMap.keySet().size());
+        int randomIndex = random.nextInt(inputMap.keySet().size());
         return keySetArray[randomIndex];
+    }
+
+    public int getRandomIrregularGroup(Map<Integer, Integer> inputMap) {
+        Integer[] keySetArray = inputMap.keySet().toArray(new Integer[inputMap.keySet().size()]);
+        Random random = new Random();
+        int randomIndex = random.nextInt(inputMap.keySet().size());
+        return keySetArray[randomIndex];
+    }
+
+    public boolean getRandomBoolean() {
+        Random random = new Random();
+        return random.nextBoolean();
     }
 
     public static void main(String[] args) throws TransformerException {
@@ -102,6 +114,7 @@ public class Generator {
         int minHeight = 0;
         int maxHeight = 11;
         int maxNumberOfNotesInAChord = 3;
+        boolean areIrregularGroupsPresent = true;
 
         //
         long seconds = Duration.parse(pieceLength).getSeconds();
@@ -138,10 +151,30 @@ public class Generator {
 
         int octavesNumber = 10;
 
+        Map<Integer, Integer> irregularGroupsMap = new TreeMap<>();
+        boolean isTheTimeSignatureCompound = metreInNumbers[0] % 3 == 0 && metreInNumbers[1] % 2 == 0;
+
+        if (isTheTimeSignatureCompound) {
+            irregularGroupsMap.put(2, 1);
+            irregularGroupsMap.put(4, 2);
+            irregularGroupsMap.put(5, 2);
+            irregularGroupsMap.put(7, 4);
+            irregularGroupsMap.put(9, 4);
+            irregularGroupsMap.put(11, 4);
+            irregularGroupsMap.put(13, 4);
+        } else {
+            irregularGroupsMap.put(3, 2);
+            irregularGroupsMap.put(5, 4);
+            irregularGroupsMap.put(6, 4);
+            irregularGroupsMap.put(7, 8);
+            irregularGroupsMap.put(9, 8);
+            irregularGroupsMap.put(11, 8);
+            irregularGroupsMap.put(13, 8);
+        }
 
         /* Printing notesMap
         System.out.println("Notes map keys: " + notesMap.keySet());
-        for(int[] n : notesMap.values()) {
+        for (int[] n : notesMap.values()) {
             System.out.println("Notes map values: " + n[0] + " " + n[1] + "\n");
         }
          */
@@ -312,7 +345,7 @@ public class Generator {
                     List<Integer> randomPitches = g.getRandomNonRepeatingIntegers(notesAndRests.size(), minHeight, maxHeight);
 
                     int notesInAChord = g.getRandomInteger(1, maxNumberOfNotesInAChord);
-                    
+
                     System.out.println("Notes in a chord: " + notesInAChord);
 
                     /*randomPitches.forEach(p -> {
@@ -327,23 +360,44 @@ public class Generator {
                             voice.appendChild(chord);
 
                             double randomNote = g.getRandomNote(notesMap);
-                            while (randomNote * metreInNumbers[0] > 1) {
+                            while (randomNote * notesInAChord > 1) {
                                 randomNote = g.getRandomNote(notesMap);
                             }
 
+                            int irregularGroup = g.getRandomIrregularGroup(irregularGroupsMap);
+
+                            Element duration = doc.createElement("duration");
                             if (randomNote == 1) {
-                                Element duration = doc.createElement("duration");
                                 duration.setAttribute("den", "" + metreInNumbers[1]);
                                 duration.setAttribute("num", "" + metreInNumbers[0]);
                                 chord.appendChild(duration);
+                                if (areIrregularGroupsPresent) {
+                                    if (g.getRandomBoolean()) {
+                                        Element tupletRatio = doc.createElement("tuplet_ratio");
+                                        tupletRatio.setAttribute("enter_num", "" + irregularGroup);
+                                        tupletRatio.setAttribute("enter_den", "" + metreInNumbers[1] * irregularGroupsMap.get(irregularGroup));
+                                        tupletRatio.setAttribute("in_num", "" + 1);
+                                        tupletRatio.setAttribute("in_den", "" + metreInNumbers[1]);
+                                        duration.appendChild(tupletRatio);
+                                    }
+                                }
                             } else {
-                                Element duration = doc.createElement("duration");
                                 duration.setAttribute("den", "" + notesMap.get(randomNote)[0]);
                                 duration.setAttribute("num", "" + 1);
                                 chord.appendChild(duration);
+                                if (areIrregularGroupsPresent) {
+                                    if (g.getRandomBoolean()) {
+                                        Element tupletRatio = doc.createElement("tuplet_ratio");
+                                        tupletRatio.setAttribute("enter_num", "" + irregularGroup);
+                                        tupletRatio.setAttribute("enter_den", "" + metreInNumbers[1] * irregularGroupsMap.get(irregularGroup));
+                                        tupletRatio.setAttribute("in_num", "" + 1);
+                                        tupletRatio.setAttribute("in_den", "" + notesMap.get(randomNote)[0]);
+                                        duration.appendChild(tupletRatio);
+                                    }
+                                }
                             }
 
-                            int h = 0;
+                            int h;
                             for (h = 1; h <= notesInAChord; h++) {
                                 Element notehead = doc.createElement("notehead");
                                 chord.appendChild(notehead);
@@ -390,17 +444,9 @@ public class Generator {
                         }
 
                     }
-
-                    int randomNotesNumberInAChord = g.getRandomInteger(1, maxNumberOfNotesInAChord);
-                    /*for (int k = 1; k <= randomNotesNumberInAChord; k++) {
-                        // k: number of noteheads
-                    }*/
-
                 }
             }
 
-            // TODO
-            // define pitches
             // salvataggio
             Result output = new StreamResult(new File("ieee1599.xml"));
             Source input = new DOMSource(doc);
