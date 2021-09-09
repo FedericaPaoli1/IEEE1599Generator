@@ -6,6 +6,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Random;
 import java.util.TreeMap;
 import java.util.logging.Level;
@@ -22,6 +23,7 @@ import javax.xml.transform.TransformerException;
 import javax.xml.transform.TransformerFactory;
 import javax.xml.transform.dom.DOMSource;
 import javax.xml.transform.stream.StreamResult;
+import javafx.util.Pair;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 
@@ -44,6 +46,14 @@ public class Generator {
     public int getRandomInteger(int min, int max) {
         Random random = new Random();
         return random.nextInt((max - min) + 1) + min;
+    }
+    
+    public int getRandomIntegerFromList(List<Integer> ints) {
+        return ints.get(getRandomInteger(0, ints.size() - 1));
+    }
+    
+    public char getRandomCharFromList(List<Character> chars) {
+        return chars.get(getRandomInteger(0, chars.size() - 1));
     }
 
     public List<Integer> getRandomNonRepeatingIntegers(int size, int min, int max) {
@@ -77,6 +87,7 @@ public class Generator {
 
         return randomizedChars;
     }
+
 
     public double getRandomNote(Map<Double, int[]> inputMap) {
         Double[] keySetArray = inputMap.keySet().toArray(new Double[inputMap.keySet().size()]);
@@ -115,6 +126,8 @@ public class Generator {
         int maxHeight = 11;
         int maxNumberOfNotesInAChord = 3;
         boolean areIrregularGroupsPresent = true;
+        //Pair<int[], Integer> basicVTU = new Pair<>(minDuration, 256);
+        int basicVTU = 256;
 
         //
         long seconds = Duration.parse(pieceLength).getSeconds();
@@ -134,6 +147,9 @@ public class Generator {
         System.out.println("Max number of events: " + maxNumberOfEvents);
 
         List<Element> eventsList = new ArrayList<>();
+
+        List<Character> clefs = List.of('G', 'F', 'C');
+        List<Integer> clefsSteps = List.of(2, 4, 6);
 
         Map<Integer, String> pitchesMap = new TreeMap<>();
         pitchesMap.put(0, "C");
@@ -217,8 +233,8 @@ public class Generator {
             for (int i = 1; i <= instrumentsNumber; i++) {
                 Element event = doc.createElement("event");
                 event.setAttribute("id", "Instrument_" + i + "_voice0_measure1_ev0");
-                event.setAttribute("timing", "null");
-                event.setAttribute("hpos", "null");
+                event.setAttribute("timing", "" + 0);
+                event.setAttribute("hpos", "" + 0);
                 spine.appendChild(event);
                 eventsList.add(event);
                 firstEventsDefined = true;
@@ -227,8 +243,17 @@ public class Generator {
             for (int i = 1; i <= instrumentsNumber; i++) {
                 Element event = doc.createElement("event");
                 event.setAttribute("id", "TimeSignature_Instrument_" + i + "_1");
-                event.setAttribute("timing", "null");
-                event.setAttribute("hpos", "null");
+                event.setAttribute("timing", "" + 0);
+                event.setAttribute("hpos", "" + 0);
+                spine.appendChild(event);
+                eventsList.add(event);
+            }
+
+            for (int i = 1; i <= instrumentsNumber; i++) {
+                Element event = doc.createElement("event");
+                event.setAttribute("id", "Clef_Instrument_" + i + "_1");
+                event.setAttribute("timing", "" + 0);
+                event.setAttribute("hpos", "" + 0);
                 spine.appendChild(event);
                 eventsList.add(event);
             }
@@ -243,8 +268,8 @@ public class Generator {
                         for (int k = 1; k < eventsNumber; k++) {
                             Element event = doc.createElement("event");
                             event.setAttribute("id", "Instrument_" + randomInstruments.get(i) + "_voice0_measure" + j + "_ev" + k);
-                            event.setAttribute("timing", "null");
-                            event.setAttribute("hpos", "null");
+                            //event.setAttribute("timing", "null");
+                            //event.setAttribute("hpos", "null");
                             spine.appendChild(event);
                             eventsList.add(event);
                         }
@@ -257,8 +282,8 @@ public class Generator {
                         for (int k = 0; k < eventsNumber; k++) {
                             Element event = doc.createElement("event");
                             event.setAttribute("id", "Instrument_" + randomInstruments.get(i) + "_voice0_measure" + j + "_ev" + k);
-                            event.setAttribute("timing", "null");
-                            event.setAttribute("hpos", "null");
+                            //event.setAttribute("timing", "null");
+                            //event.setAttribute("hpos", "null");
                             spine.appendChild(event);
                             eventsList.add(event);
                         }
@@ -287,6 +312,13 @@ public class Generator {
                 timeIndication.setAttribute("den", "" + metreInNumbers[1]);
                 timeIndication.setAttribute("num", "" + metreInNumbers[0]);
                 timeSignature.appendChild(timeIndication);
+
+                Element clef = doc.createElement("clef");
+                clef.setAttribute("event_ref", "Clef_Instrument_" + i + "_1");
+                clef.setAttribute("shape", "" + g.getRandomCharFromList(clefs));
+                clef.setAttribute("staff_step", "" + g.getRandomIntegerFromList(clefsSteps));
+                clef.setAttribute("octave_num", "" + 0);
+                staff.appendChild(clef);
 
                 Element part = doc.createElement("part");
                 part.setAttribute("id", "Instrument_" + i);
@@ -356,8 +388,13 @@ public class Generator {
                         if (notesAndRests.get(k) == 'N') {
                             Element chord = doc.createElement("chord");
 
-                            chord.setAttribute("event_ref", "Instrument_" + i + "_voice0_measure" + j + "_ev" + k);
+                            String eventRef = "Instrument_" + i + "_voice0_measure" + j + "_ev" + k;
+                            chord.setAttribute("event_ref", eventRef);
                             voice.appendChild(chord);
+
+                            //TODO riuscire a fare meglio quest'operazione: evitare Optional Empty
+                            Optional<Element> optionalEvent = eventsList.stream().filter(e -> e.getAttribute("id").contains(eventRef)).findAny();
+                            Element event = optionalEvent.get();
 
                             double randomNote = g.getRandomNote(notesMap);
                             while (randomNote * notesInAChord > 1) {
@@ -371,6 +408,15 @@ public class Generator {
                                 duration.setAttribute("den", "" + metreInNumbers[1]);
                                 duration.setAttribute("num", "" + metreInNumbers[0]);
                                 chord.appendChild(duration);
+
+                                if (k > 0) {
+                                    event.setAttribute("timing", "" + basicVTU * (minDuration[0] / Integer.parseInt(duration.getAttribute("den"))));
+                                    event.setAttribute("hpos", "" + basicVTU * (minDuration[0] / Integer.parseInt(duration.getAttribute("den"))));
+                                } else {
+                                    event.setAttribute("timing", "" + 0);
+                                    event.setAttribute("hpos", "" + 0);
+                                }
+
                                 if (areIrregularGroupsPresent) {
                                     if (g.getRandomBoolean()) {
                                         Element tupletRatio = doc.createElement("tuplet_ratio");
@@ -385,6 +431,15 @@ public class Generator {
                                 duration.setAttribute("den", "" + notesMap.get(randomNote)[0]);
                                 duration.setAttribute("num", "" + 1);
                                 chord.appendChild(duration);
+
+                                if (k > 0) {
+                                    event.setAttribute("timing", "" + basicVTU * (minDuration[0] / Integer.parseInt(duration.getAttribute("den"))));
+                                    event.setAttribute("hpos", "" + basicVTU * (minDuration[0] / Integer.parseInt(duration.getAttribute("den"))));
+                                } else {
+                                    event.setAttribute("timing", "" + 0);
+                                    event.setAttribute("hpos", "" + 0);
+                                }
+
                                 if (areIrregularGroupsPresent) {
                                     if (g.getRandomBoolean()) {
                                         Element tupletRatio = doc.createElement("tuplet_ratio");
@@ -397,8 +452,7 @@ public class Generator {
                                 }
                             }
 
-                            int h;
-                            for (h = 1; h <= notesInAChord; h++) {
+                            for (int h = 1; h <= notesInAChord; h++) {
                                 Element notehead = doc.createElement("notehead");
                                 chord.appendChild(notehead);
 
@@ -417,13 +471,17 @@ public class Generator {
                                     printedAccidentals.appendChild(sharp);
                                 }
                             }
-                            k += h;
 
                         } else {
                             Element rest = doc.createElement("rest");
 
-                            rest.setAttribute("event_ref", "Instrument_" + i + "_voice0_measure" + j + "_ev" + k);
+                            String eventRef = "Instrument_" + i + "_voice0_measure" + j + "_ev" + k;
+                            rest.setAttribute("event_ref", eventRef);
                             voice.appendChild(rest);
+
+                            //TODO riuscire a fare meglio quest'operazione: evitare Optional Empty
+                            Optional<Element> optionalEvent = eventsList.stream().filter(e -> e.getAttribute("id").contains(eventRef)).findAny();
+                            Element event = optionalEvent.get();
 
                             double randomNote = g.getRandomNote(notesMap);
                             while (randomNote * metreInNumbers[0] > 1) {
@@ -435,11 +493,29 @@ public class Generator {
                                 duration.setAttribute("den", "" + metreInNumbers[1]);
                                 duration.setAttribute("num", "" + metreInNumbers[0]);
                                 rest.appendChild(duration);
+
+                                if (k > 0) {
+                                    event.setAttribute("timing", "" + basicVTU * (minDuration[0] / Integer.parseInt(duration.getAttribute("den"))));
+                                    event.setAttribute("hpos", "" + basicVTU * (minDuration[0] / Integer.parseInt(duration.getAttribute("den"))));
+                                } else {
+                                    event.setAttribute("timing", "" + 0);
+                                    event.setAttribute("hpos", "" + 0);
+                                }
+
                             } else {
                                 Element duration = doc.createElement("duration");
                                 duration.setAttribute("den", "" + notesMap.get(randomNote)[0]);
                                 duration.setAttribute("num", "" + 1);
                                 rest.appendChild(duration);
+
+                                if (k > 0) {
+                                    event.setAttribute("timing", "" + basicVTU * (minDuration[0] / Integer.parseInt(duration.getAttribute("den"))));
+                                    event.setAttribute("hpos", "" + basicVTU * (minDuration[0] / Integer.parseInt(duration.getAttribute("den"))));
+                                } else {
+                                    event.setAttribute("timing", "" + 0);
+                                    event.setAttribute("hpos", "" + 0);
+                                }
+
                             }
                         }
 
