@@ -1,14 +1,11 @@
 package com.ieee1599generator;
 
 import java.io.File;
-import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import java.util.Random;
-import java.util.TreeMap;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import javax.xml.parsers.DocumentBuilder;
@@ -23,7 +20,6 @@ import javax.xml.transform.TransformerException;
 import javax.xml.transform.TransformerFactory;
 import javax.xml.transform.dom.DOMSource;
 import javax.xml.transform.stream.StreamResult;
-import javafx.util.Pair;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 
@@ -33,513 +29,370 @@ import org.w3c.dom.Element;
  */
 public class Generator {
 
-    public int getMeasuresNumber(int bpm, long pieceLength, int[] metre) {
-        double bps = (double) bpm / 60;
-        System.out.println("bps: " + bps);
-        int beatsNumber = metre[0];
-        System.out.println("Number of beats: " + beatsNumber);
-        double oneBeatLength = 1 / bps;
-        System.out.println("oneBeatLength: " + oneBeatLength);
-        return (int) (pieceLength / (oneBeatLength * beatsNumber));
+    private static final Logger LOGGER = Logger.getLogger(Generator.class.getName());
+
+    private DocumentBuilderFactory docFactory = DocumentBuilderFactory.newInstance();
+    private Document document;
+    private boolean areFirstEventsDefined = false;
+
+    private List<Element> eventsList = new ArrayList<>();
+
+    public Generator() {
     }
 
-    public int getRandomInteger(int min, int max) {
-        Random random = new Random();
-        return random.nextInt((max - min) + 1) + min;
-    }
-    
-    public int getRandomIntegerFromList(List<Integer> ints) {
-        return ints.get(getRandomInteger(0, ints.size() - 1));
-    }
-    
-    public char getRandomCharFromList(List<Character> chars) {
-        return chars.get(getRandomInteger(0, chars.size() - 1));
-    }
+    public void execute(String creator, double version, String title, String authorName, int instrumentsNumber,
+            int measuresNumber, int maxNumberOfEvents, int[] metreInNumbers, List<Character> clefs, List<Integer> clefsSteps,
+            int maxNumberOfPlayedNotes, int maxNumberOfNotesInAChord, int minHeight, int maxHeight, Map<Double, int[]> notesMap,
+            Map<Integer, Integer> irregularGroupsMap, int minimumDelay, int[] minDuration, boolean areIrregularGroupsPresent,
+            int octavesNumber, Map<Integer, String> pitchesMap) {
+        createDocument();
+        Element ieee1599 = addElementToDocument(this.document, "ieee1599");
+        setAttributeOfElement(ieee1599, "creator", creator);
+        setAttributeOfElement(ieee1599, "version", "" + version);
+        this.document.appendChild(ieee1599);
 
-    public List<Integer> getRandomNonRepeatingIntegers(int size, int min, int max) {
-        List<Integer> numbers = new ArrayList();
-        Random random = new Random();
-        while (numbers.size() < size) {
-            int randomNumber = random.nextInt((max - min) + 1) + min;
-            //Check for duplicate values
-            if (!numbers.contains(randomNumber)) {
-                numbers.add(randomNumber);
-            }
-        }
+        Element general = addElementToDocument(this.document, "general");
+        appendChildToElement(ieee1599, general);
 
-        return numbers;
-    }
+        Element description = addElementToDocument(this.document, "description");
+        appendChildToElement(general, description);
+        Element mainTitle = addElementToDocument(this.document, "main_title");
+        setTextContentOfElement(mainTitle, title);
+        appendChildToElement(description, mainTitle);
+        Element author = addElementToDocument(this.document, "author");
+        setTextContentOfElement(author, authorName);
+        appendChildToElement(description, author);
 
-    public List<Character> getRandomNonRepeatingChars(List<Character> chars) {
-        List<Character> randomizedChars = new ArrayList();
-        int min = 0;
-        int max = chars.size() - 1;
-        Random random = new Random();
-        while (randomizedChars.size() < chars.size()) {
-            int randomIndex = random.nextInt((max - min) + 1) + min;
-            char c = chars.get(randomIndex);
-            //Check for duplicate values
-            if (!randomizedChars.contains(c)) {
-                randomizedChars.add(c);
-                System.out.println(c);
-            }
-        }
+        Element logic = addElementToDocument(this.document, "logic");
+        appendChildToElement(ieee1599, logic);
+        Element spine = addElementToDocument(this.document, "spine");
+        appendChildToElement(logic, spine);
 
-        return randomizedChars;
-    }
+        defineFirstEvents(instrumentsNumber, "Instrument_", "_voice0_measure1_ev0", spine);
+        defineFirstEvents(instrumentsNumber, "TimeSignature_Instrument_", "_1", spine);
+        defineFirstEvents(instrumentsNumber, "Clef_Instrument_", "_1", spine);
 
+        createEvents(measuresNumber, instrumentsNumber, maxNumberOfEvents, spine);
 
-    public double getRandomNote(Map<Double, int[]> inputMap) {
-        Double[] keySetArray = inputMap.keySet().toArray(new Double[inputMap.keySet().size()]);
-        Random random = new Random();
-        int randomIndex = random.nextInt(inputMap.keySet().size());
-        return keySetArray[randomIndex];
-    }
+        Element los = addElementToDocument(this.document, "los");
+        appendChildToElement(logic, los);
 
-    public int getRandomIrregularGroup(Map<Integer, Integer> inputMap) {
-        Integer[] keySetArray = inputMap.keySet().toArray(new Integer[inputMap.keySet().size()]);
-        Random random = new Random();
-        int randomIndex = random.nextInt(inputMap.keySet().size());
-        return keySetArray[randomIndex];
-    }
+        Element staffList = addElementToDocument(this.document, "staff_list");
+        appendChildToElement(los, staffList);
 
-    public boolean getRandomBoolean() {
-        Random random = new Random();
-        return random.nextBoolean();
-    }
+        for (int i = 1; i <= instrumentsNumber; i++) {
+            LOGGER.info("INSTRUMENT " + i);
 
-    public static void main(String[] args) throws TransformerException {
-        Generator g = new Generator();
-        // parametri da chiedere all'utente a riga di comando
-        String titleName = "Title";
-        String authorName = "Author";
-        int minutes = 2;
-        String pieceLength = "PT" + minutes + "M";
-        int bpm = 108;
-        String metre = 4 + ":" + 4;
-        int[] metreInNumbers = {Integer.parseInt(String.valueOf(metre.charAt(0))), Integer.parseInt(String.valueOf(metre.charAt(2)))};
-        int instrumentsNumber = 5;
-        int maxNumberOfPlayedNotes = 150;
-        int[] minDuration = {8, 1};
-        int[] maxDuration = {1, 1};
-        int minHeight = 0;
-        int maxHeight = 11;
-        int maxNumberOfNotesInAChord = 3;
-        boolean areIrregularGroupsPresent = true;
-        //Pair<int[], Integer> basicVTU = new Pair<>(minDuration, 256);
-        int basicVTU = 256;
+            Element staff = addElementToDocument(this.document, "staff");
+            setAttributeOfElement(staff, "id", "Instrument_" + i + "_staff");
+            setAttributeOfElement(staff, "line_number", "" + 5);
+            appendChildToElement(staffList, staff);
 
-        //
-        long seconds = Duration.parse(pieceLength).getSeconds();
-        System.out.println("Piece length: " + seconds);
-        int measuresNumber = g.getMeasuresNumber(bpm, seconds, metreInNumbers);
-        System.out.println("Measures number: " + measuresNumber);
+            Element timeSignature = addElementToDocument(this.document, "time_signature");
+            setAttributeOfElement(timeSignature, "event_ref", "TimeSignature_Instrument_" + i + "_1");
+            appendChildToElement(staff, timeSignature);
 
-        Map<Double, int[]> notesMap = new TreeMap<>();
-        for (int i = maxDuration[0]; i <= minDuration[0]; i *= 2) {
-            notesMap.put((double) 1 / i, new int[]{i, 1});
-        }
+            Element timeIndication = addElementToDocument(this.document, "time_indication");
+            setAttributeOfElement(timeIndication, "den", "" + metreInNumbers[1]);
+            setAttributeOfElement(timeIndication, "num", "" + metreInNumbers[0]);
+            appendChildToElement(timeSignature, timeIndication);
 
-        double noteValueForAMeasure = (double) 1 / metreInNumbers[1];
-        System.out.println("Value of a note in a measure: " + 1 + "/" + metreInNumbers[1] + " = " + noteValueForAMeasure);
+            Element clef = addElementToDocument(this.document, "clef");
+            setAttributeOfElement(clef, "event_ref", "Clef_Instrument_" + i + "_1");
+            setAttributeOfElement(clef, "shape", "" + Utils.getRandomCharFromList(clefs));
+            setAttributeOfElement(clef, "staff_step", "" + Utils.getRandomIntegerFromList(clefsSteps));
+            setAttributeOfElement(clef, "octave_num", "" + 0);
+            appendChildToElement(staff, clef);
 
-        int maxNumberOfEvents = (int) ((((double) 1 / metreInNumbers[1]) / ((double) minDuration[1] / minDuration[0])) * metreInNumbers[0]);
-        System.out.println("Max number of events: " + maxNumberOfEvents);
+            Element part = addElementToDocument(this.document, "part");
+            setAttributeOfElement(part, "id", "Instrument_" + i);
+            appendChildToElement(los, part);
 
-        List<Element> eventsList = new ArrayList<>();
+            Element voiceList = addElementToDocument(this.document, "voice_list");
+            appendChildToElement(part, voiceList);
 
-        List<Character> clefs = List.of('G', 'F', 'C');
-        List<Integer> clefsSteps = List.of(2, 4, 6);
-
-        Map<Integer, String> pitchesMap = new TreeMap<>();
-        pitchesMap.put(0, "C");
-        pitchesMap.put(1, "C-sharp");
-        pitchesMap.put(2, "D");
-        pitchesMap.put(3, "D-sharp");
-        pitchesMap.put(4, "E");
-        pitchesMap.put(5, "F");
-        pitchesMap.put(6, "F-sharp");
-        pitchesMap.put(7, "G");
-        pitchesMap.put(8, "G-sharp");
-        pitchesMap.put(9, "A");
-        pitchesMap.put(10, "B-sharp");
-        pitchesMap.put(11, "B");
-
-        int octavesNumber = 10;
-
-        Map<Integer, Integer> irregularGroupsMap = new TreeMap<>();
-        boolean isTheTimeSignatureCompound = metreInNumbers[0] % 3 == 0 && metreInNumbers[1] % 2 == 0;
-
-        if (isTheTimeSignatureCompound) {
-            irregularGroupsMap.put(2, 1);
-            irregularGroupsMap.put(4, 2);
-            irregularGroupsMap.put(5, 2);
-            irregularGroupsMap.put(7, 4);
-            irregularGroupsMap.put(9, 4);
-            irregularGroupsMap.put(11, 4);
-            irregularGroupsMap.put(13, 4);
-        } else {
-            irregularGroupsMap.put(3, 2);
-            irregularGroupsMap.put(5, 4);
-            irregularGroupsMap.put(6, 4);
-            irregularGroupsMap.put(7, 8);
-            irregularGroupsMap.put(9, 8);
-            irregularGroupsMap.put(11, 8);
-            irregularGroupsMap.put(13, 8);
-        }
-
-        /* Printing notesMap
-        System.out.println("Notes map keys: " + notesMap.keySet());
-        for (int[] n : notesMap.values()) {
-            System.out.println("Notes map values: " + n[0] + " " + n[1] + "\n");
-        }
-         */
-        DocumentBuilderFactory docFactory = DocumentBuilderFactory.newInstance();
-
-        try {
-            DocumentBuilder docBuilder;
-            docBuilder = docFactory.newDocumentBuilder();
-            Document doc = docBuilder.newDocument();
-
-            Element ieee1599 = doc.createElement("ieee1599");
-            ieee1599.setAttribute("creator", "Federica Paoli'");
-            ieee1599.setAttribute("version", "1.0");
-            doc.appendChild(ieee1599);
-
-            // general
-            Element general = doc.createElement("general");
-            ieee1599.appendChild(general);
-
-            Element description = doc.createElement("description");
-            general.appendChild(description);
-
-            Element main_title = doc.createElement("main_title");
-            main_title.setTextContent(titleName);
-            description.appendChild(main_title);
-
-            Element author = doc.createElement("author");
-            author.setTextContent(authorName);
-            description.appendChild(author);
-
-            // logic
-            Element logic = doc.createElement("logic");
-            ieee1599.appendChild(logic);
-
-            Element spine = doc.createElement("spine");
-            logic.appendChild(spine);
-
-            boolean firstEventsDefined = false;
-
-            for (int i = 1; i <= instrumentsNumber; i++) {
-                Element event = doc.createElement("event");
-                event.setAttribute("id", "Instrument_" + i + "_voice0_measure1_ev0");
-                event.setAttribute("timing", "" + 0);
-                event.setAttribute("hpos", "" + 0);
-                spine.appendChild(event);
-                eventsList.add(event);
-                firstEventsDefined = true;
-            }
-
-            for (int i = 1; i <= instrumentsNumber; i++) {
-                Element event = doc.createElement("event");
-                event.setAttribute("id", "TimeSignature_Instrument_" + i + "_1");
-                event.setAttribute("timing", "" + 0);
-                event.setAttribute("hpos", "" + 0);
-                spine.appendChild(event);
-                eventsList.add(event);
-            }
-
-            for (int i = 1; i <= instrumentsNumber; i++) {
-                Element event = doc.createElement("event");
-                event.setAttribute("id", "Clef_Instrument_" + i + "_1");
-                event.setAttribute("timing", "" + 0);
-                event.setAttribute("hpos", "" + 0);
-                spine.appendChild(event);
-                eventsList.add(event);
-            }
+            Element voiceItem = addElementToDocument(this.document, "voice_item");
+            setAttributeOfElement(voiceItem, "id", "Instrument_" + i + "_0_voice");
+            setAttributeOfElement(voiceItem, "staff_ref", "Instrument_" + i + "_staff");
+            appendChildToElement(voiceList, voiceItem);
 
             for (int j = 1; j <= measuresNumber; j++) {
-                //System.out.println("MEASURE " + j);
-                List<Integer> randomInstruments = g.getRandomNonRepeatingIntegers(instrumentsNumber, 1, instrumentsNumber);
-                if (firstEventsDefined) {
-                    for (int i = 0; i < randomInstruments.size(); i++) {
-                        int eventsNumber = g.getRandomInteger(1, maxNumberOfEvents);
-                        //System.out.println("Events number for instrument " + randomInstruments.get(i) + " : " + eventsNumber);
-                        for (int k = 1; k < eventsNumber; k++) {
-                            Element event = doc.createElement("event");
-                            event.setAttribute("id", "Instrument_" + randomInstruments.get(i) + "_voice0_measure" + j + "_ev" + k);
-                            //event.setAttribute("timing", "null");
-                            //event.setAttribute("hpos", "null");
-                            spine.appendChild(event);
-                            eventsList.add(event);
-                        }
-                    }
-                    firstEventsDefined = false;
-                } else {
-                    for (int i = 0; i < randomInstruments.size(); i++) {
-                        int eventsNumber = g.getRandomInteger(1, maxNumberOfEvents);
-                        //System.out.println("Events number for instrument " + randomInstruments.get(i) + " : " + eventsNumber);
-                        for (int k = 0; k < eventsNumber; k++) {
-                            Element event = doc.createElement("event");
-                            event.setAttribute("id", "Instrument_" + randomInstruments.get(i) + "_voice0_measure" + j + "_ev" + k);
-                            //event.setAttribute("timing", "null");
-                            //event.setAttribute("hpos", "null");
-                            spine.appendChild(event);
-                            eventsList.add(event);
-                        }
-                    }
+                LOGGER.info("MEASURE " + j);
 
+                Element measure = addElementToDocument(this.document, "measure");
+                setAttributeOfElement(measure, "number", "" + j);
+                appendChildToElement(part, measure);
+
+                Element voice = addElementToDocument(this.document, "voice");
+                setAttributeOfElement(voice, "voice_item_ref", "Instrument_" + i + "_0_voice");
+                appendChildToElement(measure, voice);
+
+                String attributeString = "Instrument_" + i + "_voice0_measure" + j + "_";
+                int eventsNumber = (int) eventsList.stream().filter(e -> e.getAttribute("id").contains(attributeString)).count();
+                LOGGER.info("Events number: " + eventsNumber);
+
+                int notesNumber = Utils.getRandomInteger(1, maxNumberOfPlayedNotes);
+                LOGGER.info("Notes number: " + notesNumber);
+
+                int notesNumberInAMeasure = notesNumber / measuresNumber;
+                if (notesNumberInAMeasure > eventsNumber) {
+                    notesNumberInAMeasure = eventsNumber;
                 }
-            }
+                LOGGER.info("Notes number in a measure: " + notesNumberInAMeasure);
 
-            Element los = doc.createElement("los");
-            logic.appendChild(los);
+                int restsNumberInAMeasure = eventsNumber - notesNumberInAMeasure;
+                LOGGER.info("Rests number: " + restsNumberInAMeasure);
 
-            Element staffList = doc.createElement("staff_list");
-            los.appendChild(staffList);
-
-            for (int i = 1; i <= instrumentsNumber; i++) {
-                System.out.println("INSTRUMENT " + i);
-                Element staff = doc.createElement("staff");
-                staff.setAttribute("id", "Instrument_" + i + "_staff");
-                staff.setAttribute("line_number", "5");
-                staffList.appendChild(staff);
-
-                Element timeSignature = doc.createElement("time_signature");
-                timeSignature.setAttribute("event_ref", "TimeSignature_Instrument_" + i + "_1");
-                staff.appendChild(timeSignature);
-                Element timeIndication = doc.createElement("time_indication");
-                timeIndication.setAttribute("den", "" + metreInNumbers[1]);
-                timeIndication.setAttribute("num", "" + metreInNumbers[0]);
-                timeSignature.appendChild(timeIndication);
-
-                Element clef = doc.createElement("clef");
-                clef.setAttribute("event_ref", "Clef_Instrument_" + i + "_1");
-                clef.setAttribute("shape", "" + g.getRandomCharFromList(clefs));
-                clef.setAttribute("staff_step", "" + g.getRandomIntegerFromList(clefsSteps));
-                clef.setAttribute("octave_num", "" + 0);
-                staff.appendChild(clef);
-
-                Element part = doc.createElement("part");
-                part.setAttribute("id", "Instrument_" + i);
-                los.appendChild(part);
-
-                Element voiceList = doc.createElement("voice_list");
-                part.appendChild(voiceList);
-                Element voiceItem = doc.createElement("voice_item");
-                voiceItem.setAttribute("id", "Instrument_" + i + "_0_voice");
-                voiceItem.setAttribute("staff_ref", "Instrument_" + i + "_staff");
-                voiceList.appendChild(voiceItem);
-
-                for (int j = 1; j <= measuresNumber; j++) {
-                    System.out.println("MEASURE " + j);
-                    Element measure = doc.createElement("measure");
-                    measure.setAttribute("number", "" + j);
-                    part.appendChild(measure);
-
-                    Element voice = doc.createElement("voice");
-                    voice.setAttribute("voice_item_ref", "Instrument_" + i + "_0_voice");
-                    measure.appendChild(voice);
-
-                    String s = "Instrument_" + i + "_voice0_measure" + j + "_";
-                    int eventsNumber = (int) eventsList.stream().filter(e -> e.getAttribute("id").contains(s)).count();
-                    System.out.println("Events number: " + eventsNumber);
-
-                    int notesNumber = g.getRandomInteger(1, maxNumberOfPlayedNotes);
-                    System.out.println("Notes number: " + notesNumber);
-                    int notesNumberInAMeasure = notesNumber / measuresNumber;
-                    if (notesNumberInAMeasure > eventsNumber) {
-                        notesNumberInAMeasure = eventsNumber;
+                List<Character> notesAndRests = new ArrayList<>();
+                int count = 0;
+                while (count < eventsNumber) {
+                    for (int n = 1; n <= notesNumberInAMeasure; n++) {
+                        notesAndRests.add('N');
+                        count++;
                     }
-                    System.out.println("Notes number in a measure: " + notesNumberInAMeasure);
-
-                    int restsNumberInAMeasure = eventsNumber - notesNumberInAMeasure;
-                    System.out.println("Rests number: " + restsNumberInAMeasure);
-
-                    List<Character> notesAndRests = new ArrayList<>();
-                    int count = 0;
-                    while (count < eventsNumber) {
-                        for (int n = 1; n <= notesNumberInAMeasure; n++) {
-                            notesAndRests.add('N');
-                            count++;
-                        }
-                        for (int r = 1; r <= restsNumberInAMeasure; r++) {
-                            notesAndRests.add('R');
-                            count++;
-                        }
+                    for (int r = 1; r <= restsNumberInAMeasure; r++) {
+                        notesAndRests.add('R');
+                        count++;
                     }
+                }
 
-                    Collections.shuffle(notesAndRests);
+                Collections.shuffle(notesAndRests);
 
-                    /*notesAndRests.forEach(c -> {
+                /*notesAndRests.forEach(c -> {
                         System.out.println(c);
                     });*/
-                    List<Integer> randomPitches = g.getRandomNonRepeatingIntegers(notesAndRests.size(), minHeight, maxHeight);
+                List<Integer> randomPitches = Utils.getRandomNonRepeatingIntegers(notesAndRests.size(), minHeight, maxHeight);
 
-                    int notesInAChord = g.getRandomInteger(1, maxNumberOfNotesInAChord);
+                int notesInAChord = Utils.getRandomInteger(1, maxNumberOfNotesInAChord);
+                LOGGER.info("Notes in a chord: " + notesInAChord);
 
-                    System.out.println("Notes in a chord: " + notesInAChord);
-
-                    /*randomPitches.forEach(p -> {
+                /*randomPitches.forEach(p -> {
                         System.out.println(p);
                     });*/
-                    for (int k = 0; k < notesAndRests.size(); k++) {
+                for (int k = 0; k < notesAndRests.size(); k++) {
 
-                        if (notesAndRests.get(k) == 'N') {
-                            Element chord = doc.createElement("chord");
+                    if (notesAndRests.get(k) == 'N') {
+                        Element chord = addElementToDocument(this.document, "chord");
 
-                            String eventRef = "Instrument_" + i + "_voice0_measure" + j + "_ev" + k;
-                            chord.setAttribute("event_ref", eventRef);
-                            voice.appendChild(chord);
+                        String eventRef = "Instrument_" + i + "_voice0_measure" + j + "_ev" + k;
+                        setAttributeOfElement(chord, "event_ref", eventRef);
+                        appendChildToElement(voice, chord);
 
-                            //TODO riuscire a fare meglio quest'operazione: evitare Optional Empty
-                            Optional<Element> optionalEvent = eventsList.stream().filter(e -> e.getAttribute("id").contains(eventRef)).findAny();
-                            Element event = optionalEvent.get();
+                        //TODO riuscire a fare meglio quest'operazione: evitare Optional Empty
+                        Optional<Element> optionalEvent = eventsList.stream().filter(e -> e.getAttribute("id").contains(eventRef)).findAny();
+                        Element event = optionalEvent.get();
 
-                            double randomNote = g.getRandomNote(notesMap);
-                            while (randomNote * notesInAChord > 1) {
-                                randomNote = g.getRandomNote(notesMap);
-                            }
+                        double randomNote = Utils.getRandomNote(notesMap);
+                        while (randomNote * notesInAChord > 1) {
+                            randomNote = Utils.getRandomNote(notesMap);
+                        }
 
-                            int irregularGroup = g.getRandomIrregularGroup(irregularGroupsMap);
+                        int irregularGroup = Utils.getRandomIrregularGroup(irregularGroupsMap);
 
-                            Element duration = doc.createElement("duration");
-                            if (randomNote == 1) {
-                                duration.setAttribute("den", "" + metreInNumbers[1]);
-                                duration.setAttribute("num", "" + metreInNumbers[0]);
-                                chord.appendChild(duration);
+                        Element duration = addElementToDocument(this.document, "duration");
+                        if (randomNote == 1) {
+                            setAttributeOfElement(duration, "den", "" + metreInNumbers[1]);
+                            setAttributeOfElement(duration, "num", "" + metreInNumbers[0]);
+                            appendChildToElement(chord, duration);
 
-                                if (k > 0) {
-                                    event.setAttribute("timing", "" + basicVTU * (minDuration[0] / Integer.parseInt(duration.getAttribute("den"))));
-                                    event.setAttribute("hpos", "" + basicVTU * (minDuration[0] / Integer.parseInt(duration.getAttribute("den"))));
-                                } else {
-                                    event.setAttribute("timing", "" + 0);
-                                    event.setAttribute("hpos", "" + 0);
-                                }
-
-                                if (areIrregularGroupsPresent) {
-                                    if (g.getRandomBoolean()) {
-                                        Element tupletRatio = doc.createElement("tuplet_ratio");
-                                        tupletRatio.setAttribute("enter_num", "" + irregularGroup);
-                                        tupletRatio.setAttribute("enter_den", "" + metreInNumbers[1] * irregularGroupsMap.get(irregularGroup));
-                                        tupletRatio.setAttribute("in_num", "" + 1);
-                                        tupletRatio.setAttribute("in_den", "" + metreInNumbers[1]);
-                                        duration.appendChild(tupletRatio);
-                                    }
-                                }
+                            if (k > 0) {
+                                event.setAttribute("timing", "" + minimumDelay * (minDuration[0] / Integer.parseInt(duration.getAttribute("den"))));
+                                event.setAttribute("hpos", "" + minimumDelay * (minDuration[0] / Integer.parseInt(duration.getAttribute("den"))));
                             } else {
-                                duration.setAttribute("den", "" + notesMap.get(randomNote)[0]);
-                                duration.setAttribute("num", "" + 1);
-                                chord.appendChild(duration);
-
-                                if (k > 0) {
-                                    event.setAttribute("timing", "" + basicVTU * (minDuration[0] / Integer.parseInt(duration.getAttribute("den"))));
-                                    event.setAttribute("hpos", "" + basicVTU * (minDuration[0] / Integer.parseInt(duration.getAttribute("den"))));
-                                } else {
-                                    event.setAttribute("timing", "" + 0);
-                                    event.setAttribute("hpos", "" + 0);
-                                }
-
-                                if (areIrregularGroupsPresent) {
-                                    if (g.getRandomBoolean()) {
-                                        Element tupletRatio = doc.createElement("tuplet_ratio");
-                                        tupletRatio.setAttribute("enter_num", "" + irregularGroup);
-                                        tupletRatio.setAttribute("enter_den", "" + metreInNumbers[1] * irregularGroupsMap.get(irregularGroup));
-                                        tupletRatio.setAttribute("in_num", "" + 1);
-                                        tupletRatio.setAttribute("in_den", "" + notesMap.get(randomNote)[0]);
-                                        duration.appendChild(tupletRatio);
-                                    }
-                                }
+                                event.setAttribute("timing", "" + 0);
+                                event.setAttribute("hpos", "" + 0);
                             }
 
-                            for (int h = 1; h <= notesInAChord; h++) {
-                                Element notehead = doc.createElement("notehead");
-                                chord.appendChild(notehead);
-
-                                Element pitch = doc.createElement("pitch");
-                                pitch.setAttribute("actual_accidental", "natural");
-                                int randomOctave = g.getRandomInteger(0, octavesNumber);
-                                pitch.setAttribute("octave", "" + randomOctave);
-                                pitch.setAttribute("step", "" + pitchesMap.get(randomPitches.get(k)).charAt(0));
-                                notehead.appendChild(pitch);
-
-                                if (pitchesMap.get(randomPitches.get(k)).length() > 1) {
-                                    pitch.setAttribute("actual_accidental", "sharp");
-                                    Element printedAccidentals = doc.createElement("printed_accidentals");
-                                    notehead.appendChild(printedAccidentals);
-                                    Element sharp = doc.createElement("sharp");
-                                    printedAccidentals.appendChild(sharp);
+                            if (areIrregularGroupsPresent) {
+                                if (Utils.getRandomBoolean()) {
+                                    Element tupletRatio = addElementToDocument(this.document, "tuplet_ratio");
+                                    setAttributeOfElement(tupletRatio, "enter_num", "" + irregularGroup);
+                                    setAttributeOfElement(tupletRatio, "enter_den", "" + metreInNumbers[1] * irregularGroupsMap.get(irregularGroup));
+                                    setAttributeOfElement(tupletRatio, "in_num", "" + 1);
+                                    setAttributeOfElement(tupletRatio, "in_den", "" + metreInNumbers[1]);
+                                    appendChildToElement(duration, tupletRatio);
                                 }
+                            }
+                        } else {
+                            setAttributeOfElement(duration, "den", "" + notesMap.get(randomNote)[0]);
+                            setAttributeOfElement(duration, "num", "" + 1);
+                            appendChildToElement(chord, duration);
+
+                            if (k > 0) {
+                                setAttributeOfElement(event, "timing", "" + minimumDelay * (minDuration[0] / Integer.parseInt(duration.getAttribute("den"))));
+                                setAttributeOfElement(event, "hpos", "" + minimumDelay * (minDuration[0] / Integer.parseInt(duration.getAttribute("den"))));
+                            } else {
+                                setAttributeOfElement(event, "timing", "" + 0);
+                                setAttributeOfElement(event, "hpos", "" + 0);
+                            }
+
+                            if (areIrregularGroupsPresent) {
+                                if (Utils.getRandomBoolean()) {
+                                    Element tupletRatio = addElementToDocument(this.document, "tuplet_ratio");
+                                    setAttributeOfElement(tupletRatio, "enter_num", "" + irregularGroup);
+                                    setAttributeOfElement(tupletRatio, "enter_den", "" + metreInNumbers[1] * irregularGroupsMap.get(irregularGroup));
+                                    setAttributeOfElement(tupletRatio, "in_num", "" + 1);
+                                    setAttributeOfElement(tupletRatio, "in_den", "" + notesMap.get(randomNote)[0]);
+                                    appendChildToElement(duration, tupletRatio);
+                                }
+                            }
+                        }
+
+                        for (int h = 1; h <= notesInAChord; h++) {
+                            Element notehead = addElementToDocument(this.document, "notehead");
+                            appendChildToElement(chord, notehead);
+
+                            Element pitch = addElementToDocument(this.document, "pitch");
+                            setAttributeOfElement(pitch, "actual_accidental", "natural");
+                            int randomOctave = Utils.getRandomInteger(0, octavesNumber);
+                            setAttributeOfElement(pitch, "octave", "" + randomOctave);
+                            setAttributeOfElement(pitch, "step", "" + pitchesMap.get(randomPitches.get(k)).charAt(0));
+                            appendChildToElement(notehead, pitch);
+
+                            if (pitchesMap.get(randomPitches.get(k)).length() > 1) {
+                                setAttributeOfElement(pitch, "actual_accidental", "sharp");
+
+                                Element printedAccidentals = addElementToDocument(this.document, "printed_accidentals");
+                                appendChildToElement(notehead, printedAccidentals);
+
+                                Element sharp = addElementToDocument(this.document, "sharp");
+                                appendChildToElement(notehead, sharp);
+                            }
+                        }
+
+                    } else {
+                        Element rest = addElementToDocument(this.document, "rest");
+
+                        String eventRef = "Instrument_" + i + "_voice0_measure" + j + "_ev" + k;
+                        setAttributeOfElement(rest, "event_ref", eventRef);
+                        appendChildToElement(voice, rest);
+
+                        //TODO riuscire a fare meglio quest'operazione: evitare Optional Empty
+                        Optional<Element> optionalEvent = eventsList.stream().filter(e -> e.getAttribute("id").contains(eventRef)).findAny();
+                        Element event = optionalEvent.get();
+
+                        double randomNote = Utils.getRandomNote(notesMap);
+                        while (randomNote * metreInNumbers[0] > 1) {
+                            randomNote = Utils.getRandomNote(notesMap);
+                        }
+
+                        if (randomNote == 1) {
+                            Element duration = addElementToDocument(this.document, "duration");
+                            setAttributeOfElement(duration, "den", "" + metreInNumbers[1]);
+                            setAttributeOfElement(duration, "num", "" + metreInNumbers[0]);
+                            appendChildToElement(rest, duration);
+
+                            if (k > 0) {
+                                setAttributeOfElement(event, "timing", "" + minimumDelay * (minDuration[0] / Integer.parseInt(duration.getAttribute("den"))));
+                                setAttributeOfElement(event, "hpos", "" + minimumDelay * (minDuration[0] / Integer.parseInt(duration.getAttribute("den"))));
+                            } else {
+                                setAttributeOfElement(event, "timing", "" + 0);
+                                setAttributeOfElement(event, "hpos", "" + 0);
                             }
 
                         } else {
-                            Element rest = doc.createElement("rest");
+                            Element duration = addElementToDocument(this.document, "duration");
+                            setAttributeOfElement(duration, "den", "" + notesMap.get(randomNote)[0]);
+                            setAttributeOfElement(duration, "num", "" + 1);
+                            appendChildToElement(rest, duration);
 
-                            String eventRef = "Instrument_" + i + "_voice0_measure" + j + "_ev" + k;
-                            rest.setAttribute("event_ref", eventRef);
-                            voice.appendChild(rest);
-
-                            //TODO riuscire a fare meglio quest'operazione: evitare Optional Empty
-                            Optional<Element> optionalEvent = eventsList.stream().filter(e -> e.getAttribute("id").contains(eventRef)).findAny();
-                            Element event = optionalEvent.get();
-
-                            double randomNote = g.getRandomNote(notesMap);
-                            while (randomNote * metreInNumbers[0] > 1) {
-                                randomNote = g.getRandomNote(notesMap);
-                            }
-
-                            if (randomNote == 1) {
-                                Element duration = doc.createElement("duration");
-                                duration.setAttribute("den", "" + metreInNumbers[1]);
-                                duration.setAttribute("num", "" + metreInNumbers[0]);
-                                rest.appendChild(duration);
-
-                                if (k > 0) {
-                                    event.setAttribute("timing", "" + basicVTU * (minDuration[0] / Integer.parseInt(duration.getAttribute("den"))));
-                                    event.setAttribute("hpos", "" + basicVTU * (minDuration[0] / Integer.parseInt(duration.getAttribute("den"))));
-                                } else {
-                                    event.setAttribute("timing", "" + 0);
-                                    event.setAttribute("hpos", "" + 0);
-                                }
-
+                            if (k > 0) {
+                                setAttributeOfElement(event, "timing", "" + minimumDelay * (minDuration[0] / Integer.parseInt(duration.getAttribute("den"))));
+                                setAttributeOfElement(event, "hpos", "" + minimumDelay * (minDuration[0] / Integer.parseInt(duration.getAttribute("den"))));
                             } else {
-                                Element duration = doc.createElement("duration");
-                                duration.setAttribute("den", "" + notesMap.get(randomNote)[0]);
-                                duration.setAttribute("num", "" + 1);
-                                rest.appendChild(duration);
-
-                                if (k > 0) {
-                                    event.setAttribute("timing", "" + basicVTU * (minDuration[0] / Integer.parseInt(duration.getAttribute("den"))));
-                                    event.setAttribute("hpos", "" + basicVTU * (minDuration[0] / Integer.parseInt(duration.getAttribute("den"))));
-                                } else {
-                                    event.setAttribute("timing", "" + 0);
-                                    event.setAttribute("hpos", "" + 0);
-                                }
-
+                                setAttributeOfElement(event, "timing", "" + 0);
+                                setAttributeOfElement(event, "hpos", "" + 0);
                             }
                         }
-
                     }
                 }
             }
+        }
+    }
 
-            // salvataggio
-            Result output = new StreamResult(new File("ieee1599.xml"));
-            Source input = new DOMSource(doc);
-            try {
-                TransformerFactory tf = TransformerFactory.newInstance();
-                Transformer t;
-                t = tf.newTransformer();
-                t.setOutputProperty(OutputKeys.INDENT, "yes");
-                t.setOutputProperty("{http://xml.apache.org/xslt}indent-amount", "3");
-                t.transform(input, output);
-            } catch (TransformerConfigurationException ex) {
-                Logger.getLogger(Generator.class.getName()).log(Level.SEVERE, null, ex);
+    private void createEvents(int measuresNumber, int instrumentsNumber, int maxNumberOfEvents, Element spine) {
+        for (int j = 1; j <= measuresNumber; j++) {
+            List<Integer> randomInstruments = Utils.getRandomNonRepeatingIntegers(instrumentsNumber, 1, instrumentsNumber);
+            if (this.areFirstEventsDefined) {
+                for (int i = 0; i < randomInstruments.size(); i++) {
+                    int eventsNumber = Utils.getRandomInteger(1, maxNumberOfEvents);
+                    for (int k = 1; k < eventsNumber; k++) {
+                        defineOtherEvents(i, j, k, randomInstruments, spine);
+                    }
+                }
+                this.areFirstEventsDefined = false;
+            } else {
+                for (int i = 0; i < randomInstruments.size(); i++) {
+                    int eventsNumber = Utils.getRandomInteger(1, maxNumberOfEvents);
+                    for (int k = 0; k < eventsNumber; k++) {
+                        defineOtherEvents(i, j, k, randomInstruments, spine);
+                    }
+                }
             }
+        }
+    }
+
+    private void defineOtherEvents(int i, int j, int k, List<Integer> randomInstruments, Element spine) {
+        Element event = addElementToDocument(this.document, "event");
+        setAttributeOfElement(event, "id", "Instrument_" + randomInstruments.get(i) + "_voice0_measure" + j + "_ev" + k);
+        appendChildToElement(spine, event);
+        this.eventsList.add(event);
+    }
+
+    private void defineFirstEvents(int instrumentsNumber, String firstPart, String secondPart, Element spine) {
+        for (int i = 1; i <= instrumentsNumber; i++) {
+            Element event = addElementToDocument(this.document, "event");
+            setAttributeOfElement(event, "id", firstPart + i + secondPart);
+            setAttributeOfElement(event, "timing", "" + 0);
+            setAttributeOfElement(event, "hpos", "" + 0);
+            appendChildToElement(spine, event);
+            this.eventsList.add(event);
+            this.areFirstEventsDefined = true;
+        }
+    }
+
+    private void createDocument() {
+        try {
+            DocumentBuilder docBuilder;
+            docBuilder = this.docFactory.newDocumentBuilder();
+            this.document = docBuilder.newDocument();
+
         } catch (ParserConfigurationException ex) {
             Logger.getLogger(Generator.class.getName()).log(Level.SEVERE, null, ex);
         }
+    }
 
+    private Element addElementToDocument(Document document, String elementName) {
+        return document.createElement(elementName);
+    }
+
+    private void appendChildToElement(Element firstElement, Element secondElement) {
+        firstElement.appendChild(secondElement);
+    }
+
+    private void setAttributeOfElement(Element element, String firstString, String secondString) {
+        element.setAttribute(firstString, secondString);
+    }
+
+    private void setTextContentOfElement(Element element, String string) {
+        element.setTextContent(string);
+    }
+
+    public void saveXMLFile(Document document) {
+        Result output = new StreamResult(new File("ieee1599.xml"));
+        Source input = new DOMSource(document);
+        try {
+            TransformerFactory tf = TransformerFactory.newInstance();
+            Transformer t;
+            t = tf.newTransformer();
+            t.setOutputProperty(OutputKeys.INDENT, "yes");
+            t.setOutputProperty("{http://xml.apache.org/xslt}indent-amount", "3");
+            t.transform(input, output);
+        } catch (TransformerConfigurationException ex) {
+            Logger.getLogger(GeneratorToRemove.class.getName()).log(Level.SEVERE, null, ex);
+        } catch (TransformerException ex) {
+            Logger.getLogger(Generator.class.getName()).log(Level.SEVERE, null, ex);
+        }
     }
 
 }
