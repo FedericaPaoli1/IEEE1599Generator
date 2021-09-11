@@ -9,11 +9,11 @@ import java.util.Random;
  *
  * @author federica
  */
-public class Utils {
+public class Randomizer {
 
     private final Random random;
 
-    public Utils(int seed) {
+    public Randomizer(long seed) {
         this.random = new Random(seed);
     }
 
@@ -61,6 +61,14 @@ public class Utils {
         Double[] keySetArray = inputMap.keySet().toArray(new Double[inputMap.keySet().size()]);
         int randomIndex = this.random.nextInt(inputMap.keySet().size());
         return keySetArray[randomIndex];
+    }
+
+    protected double getRandomNote(int notesInAChord, Map<Double, int[]> inputMap) {
+        double randomNote = getRandomNote(inputMap);
+        while (randomNote * notesInAChord > 1) {
+            randomNote = getRandomNote(inputMap);
+        }
+        return randomNote;
     }
 
     protected int getRandomIrregularGroup(Map<Integer, Integer> inputMap) {

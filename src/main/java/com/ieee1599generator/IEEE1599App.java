@@ -94,7 +94,7 @@ public class IEEE1599App implements Callable<Void> {
     private int octavesNumber = 10;
 
     @Option(names = {"--seed"}, description = "seed for random object")
-    private int seed = 10;
+    private long seed = 10;
 
     public static void main(String[] args) {
         new CommandLine(new IEEE1599App()).execute(args);
@@ -103,12 +103,36 @@ public class IEEE1599App implements Callable<Void> {
     @Override
     public Void call() throws Exception {
         try {
-            Formatter formatter = new Formatter(new Initializer(this.trackLength, this.metre, this.bpm, this.minDuration, this.maxDuration), this.seed);
-            formatter.execute(this.creator, this.docVersion, this.title, this.author, this.instrumentsNumber, this.clefs, this.clefsSteps, 
-                    this.minHeight, this.maxHeight, this.maxNumberOfNotesInAChord, this.minimumDelay, this.areIrregularGroupsPresent, 
-                    this.octavesNumber, this.pitchesMap);
+            Initializer initializer = new Initializer(trackLength, metre, bpm, minDuration, maxDuration);
+
+            Formatter formatter = FormatterBuilder.newBuilder()
+                    .seed(seed)
+                    .creator(creator)
+                    .docVersion(docVersion)
+                    .title(title)
+                    .author(author)
+                    .instrumentsNumber(instrumentsNumber)
+                    .maxNumberOfPlayedNotes(maxNumberOfPlayedNotes)
+                    .minDuration(minDuration)
+                    .minHeight(minHeight)
+                    .maxHeight(maxHeight)
+                    .maxNumberOfNotesInAChord(maxNumberOfNotesInAChord)
+                    .areIrregularGroupsPresent(areIrregularGroupsPresent)
+                    .minimumDelay(minimumDelay)
+                    .clefs(clefs)
+                    .clefsSteps(clefsSteps)
+                    .pitchesMap(pitchesMap)
+                    .octavesNumber(octavesNumber)
+                    .metreInNumbers(initializer.getMetreInNumbers())
+                    .measuresNumber(initializer.getMeasuresNumber())
+                    .notesMap(initializer.getNotesMap())
+                    .maxNumberOfEvents(initializer.getMaxNumberOfEvents())
+                    .irregularGroupsMap(initializer.getIrregularGroupsMap())
+                    .build();
+
             Generator generator = new Generator();
             generator.saveXMLFile(formatter.getDocument());
+
         } catch (Exception e) {
             LOGGER.info("Can cause Exception");
         }
