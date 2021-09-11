@@ -16,6 +16,7 @@ public class Initializer {
     private final int maxNumberOfEvents;
     private Map<Integer, Integer> irregularGroupsMap = new TreeMap<>();
 
+    // TODO prendere direttamente i secondi
     public Initializer(double trackLength, String metre, int bpm, int[] minDuration, int[] maxDuration) {
         String pieceLength = "PT" + trackLength + "M";
         this.metreInNumbers = new int[]{Integer.parseInt(String.valueOf(metre.charAt(0))), Integer.parseInt(String.valueOf(metre.charAt(2)))};

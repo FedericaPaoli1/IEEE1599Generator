@@ -18,61 +18,59 @@ public class IEEE1599App implements Callable<Void> {
 
     private static final Logger LOGGER = Logger.getLogger(IEEE1599App.class.getName());
 
-    @Option(names = {"--creator"}, description = "document creator name")
+    @Option(names = {"--creator"}, description = "document creator name", interactive = true, echo = true)
     private String creator;
-
-    @Option(names = {"--doc-version"}, description = "document version")
+    
     private double docVersion = 1.0;
 
-    @Option(names = {"--title"}, description = "piece title")
-    private String title = "Title";
+    @Option(names = {"--title"}, defaultValue = "Title", description = "piece title (default: ${DEFAULT-VALUE})")
+    private String title;
 
-    @Option(names = {"--author"}, description = "piece author")
-    private String author = "Author";
+    @Option(names = {"--author"}, defaultValue = "Author", description = "piece author (default: ${DEFAULT-VALUE})")
+    private String author;
 
-    @Option(names = {"--track-length"}, description = "track length in minutes")
+    @Option(names = {"--track-length"}, description = "track length in minutes", interactive = true, echo = true)
     private double trackLength;
 
-    @Option(names = {"--bpm"}, description = "time in bpm")
+    @Option(names = {"--bpm"}, description = "time in bpm", interactive = true, echo = true)
     private int bpm;
 
-    @Option(names = {"--metre"}, description = "metre")
+    @Option(names = {"--metre"}, description = "metre", interactive = true, echo = true)
     private String metre;
 
-    @Option(names = {"--instruments-number"}, description = "number of instruments")
+    @Option(names = {"--instruments-number"}, description = "number of instruments", interactive = true, echo = true)
     private int instrumentsNumber;
 
-    @Option(names = {"--max-notes-number"}, description = "maximum number of played notes")
+    @Option(names = {"--max-notes-number"}, description = "maximum number of played notes", interactive = true, echo = true)
     private int maxNumberOfPlayedNotes;
 
-    @Option(names = {"--min-duration"}, description = "minimum duration of musical figures")
+    // da mettere interactive
+    @Option(names = {"--min-duration"}, split = ",", description = "minimum duration of musical figures", echo = true)
     private int[] minDuration;
 
-    @Option(names = {"--max-duration"}, description = "maximum duration of musical figures")
+    // da mettere interactive
+    @Option(names = {"--max-duration"}, split = ",", description = "maximum duration of musical figures", echo = true)
     private int[] maxDuration;
 
-    @Option(names = {"--min-height"}, description = "minimum heigth of musical figures")
+    @Option(names = {"--min-height"}, description = "minimum heigth of musical figures", interactive = true, echo = true)
     private int minHeight;
 
-    @Option(names = {"--max-height"}, description = "maximum heigth of musical figures")
+    @Option(names = {"--max-height"}, description = "maximum heigth of musical figures", interactive = true, echo = true)
     private int maxHeight;
 
-    @Option(names = {"--max-notes-number-chord"}, description = "maximum number of notes in a chord")
+    @Option(names = {"--max-notes-number-chord"}, description = "maximum number of notes in a chord", interactive = true, echo = true)
     private int maxNumberOfNotesInAChord;
 
-    @Option(names = "-irregular-groups")
+    @Option(names = "--irregular-groups", interactive = true, echo = true)
     private boolean areIrregularGroupsPresent;
 
-    @Option(names = {"--min-delay"}, description = "minimum delay in VTU after which the next note will sound")
+    @Option(names = {"--min-delay"}, description = "minimum delay in VTU after which the next note will sound", interactive = true, echo = true)
     private int minimumDelay;
 
-    @Option(names = {"--clefs"}, description = "available clefs")
     private List<Character> clefs = List.of('G', 'F', 'C');
 
-    @Option(names = {"--clefs-steps"}, description = "available clefs steps")
     private List<Integer> clefsSteps = List.of(2, 4, 6);
 
-    @Option(names = {"--pitches"}, description = "pitches map")
     private Map<Integer, String> pitchesMap = new TreeMap<Integer, String>() {
         {
             put(0, "C");
@@ -90,15 +88,10 @@ public class IEEE1599App implements Callable<Void> {
         }
     };
 
-    @Option(names = {"--octaves"}, description = "number of octaves")
-    private int octavesNumber = 10;
+    private int octavesNumber;
 
-    @Option(names = {"--seed"}, description = "seed for random object")
-    private long seed = 10;
-
-    public static void main(String[] args) {
-        new CommandLine(new IEEE1599App()).execute(args);
-    }
+    @Option(names = {"--seed"}, defaultValue = "1234", description = "seed for random object (default: ${DEFAULT-VALUE})")
+    private long seed;
 
     @Override
     public Void call() throws Exception {
@@ -135,7 +128,13 @@ public class IEEE1599App implements Callable<Void> {
 
         } catch (Exception e) {
             LOGGER.info("Can cause Exception");
+            System.out.println(e);
+            e.printStackTrace();
         }
         return null;
+    }
+
+    public static void main(String... args) {
+        System.exit(new CommandLine(new IEEE1599App()).execute(args));
     }
 }
