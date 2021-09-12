@@ -1,6 +1,7 @@
 package com.ieee1599generator;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
@@ -31,46 +32,35 @@ public class Formatter {
     private String title;
     private String author;
     private int instrumentsNumber;
-    private int maxNumberOfPlayedNotes;
-    private int[] minDuration;
-    private int minHeight;
-    private int maxHeight;
-    private int maxNumberOfNotesInAChord;
-    private boolean areIrregularGroupsPresent;
-    private int minimumDelay;
+    private List<Instrument> instruments;
     private List<Character> clefs;
     private List<Integer> clefsSteps;
     private Map<Integer, String> pitchesMap;
     private int octavesNumber;
     private int[] metreInNumbers;
     private int measuresNumber;
-    private Map<Double, int[]> notesMap;
-    private int maxNumberOfEvents;
-    private Map<Integer, Integer> irregularGroupsMap;
 
-    public Formatter(long seed, String creator, double docVersion, String title, String author, int instrumentsNumber, int maxNumberOfPlayedNotes, int[] minDuration, int minHeight, int maxHeight, int maxNumberOfNotesInAChord, boolean areIrregularGroupsPresent, int minimumDelay, List<Character> clefs, List<Integer> clefsSteps, Map<Integer, String> pitchesMap, int octavesNumber, int[] metreInNumbers, int measuresNumber, Map<Double, int[]> notesMap, int maxNumberOfEvents, Map<Integer, Integer> irregularGroupsMap) {
+    public Formatter(long seed, String creator, double docVersion, String title, String author, int instrumentsNumber, List<Instrument> instruments, List<Character> clefs, List<Integer> clefsSteps, Map<Integer, String> pitchesMap, int octavesNumber, int[] metreInNumbers, int measuresNumber) {
         this.randomizer = new Randomizer(seed);
+        LOGGER.log(Level.INFO, "Randomizer seed: " + seed);
         this.creator = creator;
+        LOGGER.log(Level.INFO, "Creator: " + this.creator);
         this.docVersion = docVersion;
+        LOGGER.log(Level.INFO, "Document version: " + this.docVersion);
         this.title = title;
+        LOGGER.log(Level.INFO, "Title: " + this.title);
         this.author = author;
+        LOGGER.log(Level.INFO, "Author: " + this.author);
         this.instrumentsNumber = instrumentsNumber;
-        this.maxNumberOfPlayedNotes = maxNumberOfPlayedNotes;
-        this.minDuration = minDuration;
-        this.minHeight = minHeight;
-        this.maxHeight = maxHeight;
-        this.maxNumberOfNotesInAChord = maxNumberOfNotesInAChord;
-        this.areIrregularGroupsPresent = areIrregularGroupsPresent;
-        this.minimumDelay = minimumDelay;
+        LOGGER.log(Level.INFO, "Number of instruments: " + this.instrumentsNumber);
+        this.instruments = instruments;
+        //LOGGER.log(Level.INFO, "Instruments: " + );
         this.clefs = clefs;
         this.clefsSteps = clefsSteps;
         this.pitchesMap = pitchesMap;
         this.octavesNumber = octavesNumber;
         this.metreInNumbers = metreInNumbers;
         this.measuresNumber = measuresNumber;
-        this.notesMap = notesMap;
-        this.maxNumberOfEvents = maxNumberOfEvents;
-        this.irregularGroupsMap = irregularGroupsMap;
     }
 
     public void format() {
@@ -79,18 +69,18 @@ public class Formatter {
 
         Element ieee1599 = createGeneralLayer(creator, docVersion, title, author);
 
-        createLogicLayer(ieee1599, instrumentsNumber, clefs, clefsSteps, minHeight, maxHeight, maxNumberOfNotesInAChord, minimumDelay, areIrregularGroupsPresent, octavesNumber, pitchesMap);
+        createLogicLayer(ieee1599, instrumentsNumber, clefs, clefsSteps, octavesNumber, pitchesMap);
     }
 
-    private void createLogicLayer(Element ieee1599, int instrumentsNumber, List<Character> clefs, List<Integer> clefsSteps, int minHeight, int maxHeight, int maxNumberOfNotesInAChord, int minimumDelay, boolean areIrregularGroupsPresent, int octavesNumber, Map<Integer, String> pitchesMap) throws NumberFormatException {
+    private void createLogicLayer(Element ieee1599, int instrumentsNumber, List<Character> clefs, List<Integer> clefsSteps, int octavesNumber, Map<Integer, String> pitchesMap) throws NumberFormatException {
         Element logic = addLogicElement(ieee1599);
 
         createSpineContainer(logic, instrumentsNumber);
 
-        createLosContainer(logic, instrumentsNumber, clefs, clefsSteps, minHeight, maxHeight, maxNumberOfNotesInAChord, minimumDelay, areIrregularGroupsPresent, octavesNumber, pitchesMap);
+        createLosContainer(logic, instrumentsNumber, clefs, clefsSteps, octavesNumber, pitchesMap);
     }
 
-    private void createLosContainer(Element logic, int instrumentsNumber, List<Character> clefs, List<Integer> clefsSteps, int minHeight, int maxHeight, int maxNumberOfNotesInAChord, int minimumDelay, boolean areIrregularGroupsPresent, int octavesNumber, Map<Integer, String> pitchesMap) throws NumberFormatException {
+    private void createLosContainer(Element logic, int instrumentsNumber, List<Character> clefs, List<Integer> clefsSteps, int octavesNumber, Map<Integer, String> pitchesMap) throws NumberFormatException {
         Element los = addLosElement(logic);
 
         Element staffList = addStaffListElement(los);
@@ -100,36 +90,36 @@ public class Formatter {
 
             addStaffListComponents(i, staffList, clefs, clefsSteps);
 
-            createPartElement(i, los, minHeight, maxHeight, maxNumberOfNotesInAChord, minimumDelay, areIrregularGroupsPresent, octavesNumber, pitchesMap);
+            createPartElement(i, los, octavesNumber, pitchesMap);
         }
     }
 
-    private void createPartElement(int i, Element los, int minHeight, int maxHeight, int maxNumberOfNotesInAChord, int minimumDelay, boolean areIrregularGroupsPresent, int octavesNumber, Map<Integer, String> pitchesMap) throws NumberFormatException {
+    private void createPartElement(int i, Element los, int octavesNumber, Map<Integer, String> pitchesMap) throws NumberFormatException {
         Element part = addPartElement(i, los);
 
         createVoiceListContainer(part, i);
 
-        createMeasureElements(part, i, minHeight, maxHeight, maxNumberOfNotesInAChord, minimumDelay, areIrregularGroupsPresent, octavesNumber, pitchesMap);
+        createMeasureElements(part, i, octavesNumber, pitchesMap);
     }
 
-    private void createMeasureElements(Element part, int i, int minHeight, int maxHeight, int maxNumberOfNotesInAChord, int minimumDelay, boolean areIrregularGroupsPresent, int octavesNumber, Map<Integer, String> pitchesMap) throws NumberFormatException {
+    private void createMeasureElements(Element part, int i, int octavesNumber, Map<Integer, String> pitchesMap) throws NumberFormatException {
         for (int j = 1; j <= measuresNumber; j++) {
             LOGGER.log(Level.INFO, "MEASURE {0}", j);
 
             Element measure = addMeasureElement(j, part);
 
-            createVoiceElement(i, measure, j, minHeight, maxHeight, maxNumberOfNotesInAChord, minimumDelay, areIrregularGroupsPresent, octavesNumber, pitchesMap);
+            createVoiceElement(i, measure, j, octavesNumber, pitchesMap);
         }
     }
 
-    private void createVoiceElement(int i, Element measure, int j, int minHeight, int maxHeight, int maxNumberOfNotesInAChord, int minimumDelay, boolean areIrregularGroupsPresent, int octavesNumber, Map<Integer, String> pitchesMap) throws NumberFormatException {
+    private void createVoiceElement(int i, Element measure, int j, int octavesNumber, Map<Integer, String> pitchesMap) throws NumberFormatException {
         Element voice = addVoiceElement(i, measure);
 
         String attributeString = "Instrument_" + i + "_voice0_measure" + j + "_";
         int eventsNumber = (int) this.eventsList.stream().filter(e -> e.getAttribute("id").contains(attributeString)).count();
         LOGGER.log(Level.INFO, "Events number: {0}", eventsNumber);
 
-        int notesNumber = this.randomizer.getRandomInteger(1, maxNumberOfPlayedNotes);
+        int notesNumber = this.randomizer.getRandomInteger(1, instruments.get(i).getMaxNumberOfPlayedNotes());
         LOGGER.log(Level.INFO, "Notes number: {0}", notesNumber);
 
         int notesNumberInAMeasure = computeNotesNumberInAMeasure(notesNumber, eventsNumber);
@@ -145,9 +135,9 @@ public class Formatter {
         /*notesAndRests.forEach(c -> {
         System.out.println(c);
         });*/
-        List<Integer> randomPitches = this.randomizer.getRandomNonRepeatingIntegers(notesAndRests.size(), minHeight, maxHeight);
+        List<Integer> randomPitches = this.randomizer.getRandomNonRepeatingIntegers(notesAndRests.size(), instruments.get(i).getMinHeight(), instruments.get(i).getMaxHeight());
 
-        int notesInAChord = this.randomizer.getRandomInteger(1, maxNumberOfNotesInAChord);
+        int notesInAChord = this.randomizer.getRandomInteger(1, instruments.get(i).getMaxNumberOfNotesInAChord());
         LOGGER.log(Level.INFO, "Notes in a chord: {0}", notesInAChord);
 
         /*randomPitches.forEach(p -> {
@@ -156,10 +146,10 @@ public class Formatter {
         for (int k = 0; k < notesAndRests.size(); k++) {
 
             if (notesAndRests.get(k) == 'N') {
-                createChordElements(i, j, k, voice, notesInAChord, minimumDelay, areIrregularGroupsPresent, octavesNumber, pitchesMap, randomPitches);
+                createChordElements(i, j, k, voice, notesInAChord, instruments.get(i).getMinimumDelay(), instruments.get(i).getAreIrregularGroupsPresent(), octavesNumber, pitchesMap, randomPitches);
 
             } else {
-                createRestElements(i, j, k, voice, minimumDelay);
+                createRestElements(i, j, k, voice, instruments.get(i).getMinimumDelay());
             }
         }
     }
@@ -175,19 +165,19 @@ public class Formatter {
         Optional<Element> optionalEvent = this.eventsList.stream().filter(e -> e.getAttribute("id").contains(eventRef)).findAny();
         Element event = optionalEvent.get();
 
-        double randomNote = this.randomizer.getRandomNote(metreInNumbers[0], notesMap);
+        double randomNote = this.randomizer.getRandomNote(metreInNumbers[0], instruments.get(i).getNotesMap());
 
-        createDurationElement(randomNote, rest, k, event, minimumDelay);
+        createDurationElement(i, randomNote, rest, k, event, minimumDelay);
     }
 
-    private void createDurationElement(double randomNote, Element rest, int k, Element event, int minimumDelay) throws NumberFormatException {
+    private void createDurationElement(int i, double randomNote, Element rest, int k, Element event, int minimumDelay) throws NumberFormatException {
         if (randomNote == 1) {
             Element duration = addDurationElement(metreInNumbers, rest);
-            addEventAttributes(k, event, minimumDelay, duration);
+            addEventAttributes(i, k, event, minimumDelay, duration);
 
         } else {
-            Element duration = addDurationElement(notesMap, randomNote, rest);
-            addEventAttributes(k, event, minimumDelay, duration);
+            Element duration = addDurationElement(instruments.get(i).getNotesMap(), randomNote, rest);
+            addEventAttributes(i, k, event, minimumDelay, duration);
         }
     }
 
@@ -202,11 +192,11 @@ public class Formatter {
         Optional<Element> optionalEvent = this.eventsList.stream().filter(e -> e.getAttribute("id").contains(eventRef)).findAny();
         Element event = optionalEvent.get();
 
-        double randomNote = this.randomizer.getRandomNote(notesInAChord, notesMap);
+        double randomNote = this.randomizer.getRandomNote(notesInAChord, instruments.get(i).getNotesMap());
 
-        int irregularGroup = this.randomizer.getRandomIrregularGroup(irregularGroupsMap);
+        int irregularGroup = this.randomizer.getRandomIrregularGroup(instruments.get(i).getIrregularGroupsMap());
 
-        createDurationElement(randomNote, chord, k, event, minimumDelay, areIrregularGroupsPresent, irregularGroup);
+        createDurationElement(i, randomNote, chord, k, event, minimumDelay, areIrregularGroupsPresent, irregularGroup);
 
         createNoteheadElements(notesInAChord, chord, octavesNumber, pitchesMap, randomPitches, k);
     }
@@ -227,25 +217,25 @@ public class Formatter {
         }
     }
 
-    private void createDurationElement(double randomNote, Element chord, int k, Element event, int minimumDelay, boolean areIrregularGroupsPresent, int irregularGroup) throws NumberFormatException {
+    private void createDurationElement(int i, double randomNote, Element chord, int k, Element event, int minimumDelay, boolean areIrregularGroupsPresent, int irregularGroup) throws NumberFormatException {
         Element duration = addElementToDocument(this.document, "duration");
         if (randomNote == 1) {
             setAttributeOfElement(duration, "den", "" + metreInNumbers[1]);
             setAttributeOfElement(duration, "num", "" + metreInNumbers[0]);
             appendChildToElement(chord, duration);
 
-            addEventAttributes(k, event, minimumDelay, duration);
+            addEventAttributes(i, k, event, minimumDelay, duration);
 
-            additionForIrregularGroupsPresence(areIrregularGroupsPresent, irregularGroup, duration);
+            additionForIrregularGroupsPresence(i, areIrregularGroupsPresent, irregularGroup, duration);
 
         } else {
-            setAttributeOfElement(duration, "den", "" + notesMap.get(randomNote)[0]);
+            setAttributeOfElement(duration, "den", "" + instruments.get(i).getNotesMap().get(randomNote)[0]);
             setAttributeOfElement(duration, "num", "" + 1);
             appendChildToElement(chord, duration);
 
-            addEventAttributes(k, event, minimumDelay, duration);
+            addEventAttributes(i, k, event, minimumDelay, duration);
 
-            additionForIrregularGroupsPresence(areIrregularGroupsPresent, irregularGroup, randomNote, duration);
+            additionForIrregularGroupsPresence(i, areIrregularGroupsPresent, irregularGroup, randomNote, duration);
         }
     }
 
@@ -296,7 +286,7 @@ public class Formatter {
         defineFirstEvents(instrumentsNumber, "TimeSignature_Instrument_", "_1", spine);
         defineFirstEvents(instrumentsNumber, "Clef_Instrument_", "_1", spine);
 
-        createEvents(measuresNumber, instrumentsNumber, maxNumberOfEvents, spine);
+        createEvents(measuresNumber, instrumentsNumber, spine);
     }
 
     private Element createGeneralLayer(String creator, double version, String title, String authorName) throws DOMException {
@@ -312,26 +302,26 @@ public class Formatter {
         return this.document;
     }
 
-    private void additionForIrregularGroupsPresence(boolean areIrregularGroupsPresent, int irregularGroup, double randomNote, Element duration) {
+    private void additionForIrregularGroupsPresence(int i, boolean areIrregularGroupsPresent, int irregularGroup, double randomNote, Element duration) {
         if (areIrregularGroupsPresent) {
             if (this.randomizer.getRandomBoolean()) {
-                addTupletRatioElement(irregularGroup, metreInNumbers, irregularGroupsMap, notesMap, randomNote, duration);
+                addTupletRatioElement(irregularGroup, metreInNumbers, instruments.get(i).getIrregularGroupsMap(), instruments.get(i).getNotesMap(), randomNote, duration);
             }
         }
     }
 
-    private void additionForIrregularGroupsPresence(boolean areIrregularGroupsPresent, int irregularGroup, Element duration) {
+    private void additionForIrregularGroupsPresence(int i, boolean areIrregularGroupsPresent, int irregularGroup, Element duration) {
         if (areIrregularGroupsPresent) {
             if (this.randomizer.getRandomBoolean()) {
-                addTupletRatioElement(irregularGroup, metreInNumbers, irregularGroupsMap, duration);
+                addTupletRatioElement(irregularGroup, metreInNumbers, instruments.get(i).getIrregularGroupsMap(), duration);
             }
         }
     }
 
-    private void addEventAttributes(int k, Element event, int minimumDelay, Element duration) throws NumberFormatException {
+    private void addEventAttributes(int i, int k, Element event, int minimumDelay, Element duration) throws NumberFormatException {
         if (k > 0) {
-            setAttributeOfElement(event, "timing", "" + minimumDelay * (minDuration[0] / Integer.parseInt(duration.getAttribute("den"))));
-            setAttributeOfElement(event, "hpos", "" + minimumDelay * (minDuration[0] / Integer.parseInt(duration.getAttribute("den"))));
+            setAttributeOfElement(event, "timing", "" + minimumDelay * (instruments.get(i).getMinDuration()[0] / Integer.parseInt(duration.getAttribute("den"))));
+            setAttributeOfElement(event, "hpos", "" + minimumDelay * (instruments.get(i).getMinDuration()[0] / Integer.parseInt(duration.getAttribute("den"))));
         } else {
             setAttributeOfElement(event, "timing", "" + 0);
             setAttributeOfElement(event, "hpos", "" + 0);
@@ -519,12 +509,12 @@ public class Formatter {
         return ieee1599;
     }
 
-    private void createEvents(int measuresNumber, int instrumentsNumber, int maxNumberOfEvents, Element spine) {
+    private void createEvents(int measuresNumber, int instrumentsNumber, Element spine) {
         for (int j = 1; j <= measuresNumber; j++) {
             List<Integer> randomInstruments = this.randomizer.getRandomNonRepeatingIntegers(instrumentsNumber, 1, instrumentsNumber);
             if (this.areFirstEventsDefined) {
                 for (int i = 0; i < randomInstruments.size(); i++) {
-                    int eventsNumber = this.randomizer.getRandomInteger(1, maxNumberOfEvents);
+                    int eventsNumber = this.randomizer.getRandomInteger(1, instruments.get(i).getMaxNumberOfEvents());
                     for (int k = 1; k < eventsNumber; k++) {
                         defineOtherEvents(i, j, k, randomInstruments, spine);
                     }
@@ -532,7 +522,7 @@ public class Formatter {
                 this.areFirstEventsDefined = false;
             } else {
                 for (int i = 0; i < randomInstruments.size(); i++) {
-                    int eventsNumber = this.randomizer.getRandomInteger(1, maxNumberOfEvents);
+                    int eventsNumber = this.randomizer.getRandomInteger(1, instruments.get(i).getMaxNumberOfEvents());
                     for (int k = 0; k < eventsNumber; k++) {
                         defineOtherEvents(i, j, k, randomInstruments, spine);
                     }

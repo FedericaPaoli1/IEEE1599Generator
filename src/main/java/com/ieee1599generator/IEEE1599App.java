@@ -6,6 +6,7 @@ import java.util.TreeMap;
 import java.util.concurrent.Callable;
 import java.util.logging.Logger;
 import picocli.CommandLine;
+import picocli.CommandLine.ArgGroup;
 import picocli.CommandLine.Command;
 import picocli.CommandLine.Option;
 
@@ -18,9 +19,9 @@ public class IEEE1599App implements Callable<Void> {
 
     private static final Logger LOGGER = Logger.getLogger(IEEE1599App.class.getName());
 
-    @Option(names = {"--creator"}, description = "document creator name", interactive = true, echo = true)
+    @Option(names = {"--creator"}, description = "document creator name")
     private String creator;
-    
+
     private double docVersion = 1.0;
 
     @Option(names = {"--title"}, defaultValue = "Title", description = "piece title (default: ${DEFAULT-VALUE})")
@@ -29,44 +30,67 @@ public class IEEE1599App implements Callable<Void> {
     @Option(names = {"--author"}, defaultValue = "Author", description = "piece author (default: ${DEFAULT-VALUE})")
     private String author;
 
-    @Option(names = {"--track-length"}, description = "track length in minutes", interactive = true, echo = true)
-    private double trackLength;
+    @Option(names = {"--track-length"}, description = "track length in seconds")
+    private long trackLength;
 
-    @Option(names = {"--bpm"}, description = "time in bpm", interactive = true, echo = true)
+    @Option(names = {"--bpm"}, description = "time in bpm")
     private int bpm;
 
-    @Option(names = {"--metre"}, description = "metre", interactive = true, echo = true)
+    @Option(names = {"--metre"}, description = "metre")
     private String metre;
 
-    @Option(names = {"--instruments-number"}, description = "number of instruments", interactive = true, echo = true)
+    @Option(names = {"--instruments-number"}, description = "number of instruments")
     private int instrumentsNumber;
 
-    @Option(names = {"--max-notes-number"}, description = "maximum number of played notes", interactive = true, echo = true)
+    @ArgGroup(exclusive = false, multiplicity = "1..*")
+    List<InstrumentParams> instrumentsParams;
+
+    static class InstrumentParams {
+
+        @Option(names = "--max-notes-number", description = "maximum number of played notes")
+        int maxNumberOfPlayedNotes;
+        @Option(names = "--min-duration", split = ",", description = "minimum duration of musical figures")
+        int[] minDuration;
+        @Option(names = "--max-duration", split = ",", description = "maximum duration of musical figures")
+        int[] maxDuration;
+        @Option(names = "--min-height", description = "minimum heigth of musical figures")
+        int minHeight;
+        @Option(names = "--max-height", description = "maximum heigth of musical figures")
+        int maxHeight;
+        @Option(names = "--max-notes-number-chord", description = "maximum number of notes in a chord")
+        int maxNumberOfNotesInAChord;
+        @Option(names = "--irregular-groups")
+        boolean areIrregularGroupsPresent;
+        @Option(names = "--min-delay", description = "minimum delay in VTU after which the next note will sound")
+        int minimumDelay;
+    }
+
+    /*
+    @Option(names = {"--max-notes-number"}, description = "maximum number of played notes")
     private int maxNumberOfPlayedNotes;
 
     // da mettere interactive
-    @Option(names = {"--min-duration"}, split = ",", description = "minimum duration of musical figures", echo = true)
+    @Option(names = {"--min-duration"}, split = ",", description = "minimum duration of musical figures")
     private int[] minDuration;
 
     // da mettere interactive
-    @Option(names = {"--max-duration"}, split = ",", description = "maximum duration of musical figures", echo = true)
+    @Option(names = {"--max-duration"}, split = ",", description = "maximum duration of musical figures")
     private int[] maxDuration;
 
-    @Option(names = {"--min-height"}, description = "minimum heigth of musical figures", interactive = true, echo = true)
+    @Option(names = {"--min-height"}, description = "minimum heigth of musical figures")
     private int minHeight;
 
-    @Option(names = {"--max-height"}, description = "maximum heigth of musical figures", interactive = true, echo = true)
+    @Option(names = {"--max-height"}, description = "maximum heigth of musical figures")
     private int maxHeight;
 
-    @Option(names = {"--max-notes-number-chord"}, description = "maximum number of notes in a chord", interactive = true, echo = true)
+    @Option(names = {"--max-notes-number-chord"}, description = "maximum number of notes in a chord")
     private int maxNumberOfNotesInAChord;
 
-    @Option(names = "--irregular-groups", interactive = true, echo = true)
+    @Option(names = "--irregular-groups")
     private boolean areIrregularGroupsPresent;
 
-    @Option(names = {"--min-delay"}, description = "minimum delay in VTU after which the next note will sound", interactive = true, echo = true)
-    private int minimumDelay;
-
+    @Option(names = {"--min-delay"}, description = "minimum delay in VTU after which the next note will sound")
+    private int minimumDelay;*/
     private List<Character> clefs = List.of('G', 'F', 'C');
 
     private List<Integer> clefsSteps = List.of(2, 4, 6);
@@ -90,13 +114,23 @@ public class IEEE1599App implements Callable<Void> {
 
     private int octavesNumber;
 
-    @Option(names = {"--seed"}, defaultValue = "1234", description = "seed for random object (default: ${DEFAULT-VALUE})")
+    @Option(names = {"--seed"}, defaultValue = "1234", description = "seed for random object (default: ${DGenerator generator = new Generator();EFAULT-VALUE})")
     private long seed;
 
     @Override
     public Void call() throws Exception {
         try {
-            Initializer initializer = new Initializer(trackLength, metre, bpm, minDuration, maxDuration);
+            if (instrumentsParams.size() != instrumentsNumber) {
+                LOGGER.severe("You have to add the same parameters number as the number of instruments");
+            }
+
+            Generator generator = new Generator();
+            Initializer initializer = new Initializer(trackLength, metre, bpm);
+
+            for (int i = 0; i < instrumentsNumber; i++) {
+                InstrumentParams instrumentParams = instrumentsParams.get(i);
+                initializer.initializeInstrumentsParams(instrumentParams.maxNumberOfPlayedNotes, instrumentParams.minDuration, instrumentParams.maxDuration, instrumentParams.minHeight, instrumentParams.maxHeight, instrumentParams.maxNumberOfNotesInAChord, instrumentParams.areIrregularGroupsPresent, instrumentParams.minimumDelay);
+            }
 
             Formatter formatter = FormatterBuilder.newBuilder()
                     .seed(seed)
@@ -105,25 +139,16 @@ public class IEEE1599App implements Callable<Void> {
                     .title(title)
                     .author(author)
                     .instrumentsNumber(instrumentsNumber)
-                    .maxNumberOfPlayedNotes(maxNumberOfPlayedNotes)
-                    .minDuration(minDuration)
-                    .minHeight(minHeight)
-                    .maxHeight(maxHeight)
-                    .maxNumberOfNotesInAChord(maxNumberOfNotesInAChord)
-                    .areIrregularGroupsPresent(areIrregularGroupsPresent)
-                    .minimumDelay(minimumDelay)
+                    .instruments(initializer.getInstruments())
                     .clefs(clefs)
                     .clefsSteps(clefsSteps)
                     .pitchesMap(pitchesMap)
                     .octavesNumber(octavesNumber)
                     .metreInNumbers(initializer.getMetreInNumbers())
                     .measuresNumber(initializer.getMeasuresNumber())
-                    .notesMap(initializer.getNotesMap())
-                    .maxNumberOfEvents(initializer.getMaxNumberOfEvents())
-                    .irregularGroupsMap(initializer.getIrregularGroupsMap())
                     .build();
 
-            Generator generator = new Generator();
+            formatter.format();
             generator.saveXMLFile(formatter.getDocument());
 
         } catch (Exception e) {
