@@ -1,6 +1,7 @@
 package com.ieee1599generator;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.Random;
@@ -41,6 +42,14 @@ public class Randomizer {
         return numbers;
     }
 
+    protected List<Integer> getRandomIntegers(int size, int min, int max) {
+        List<Integer> numbers = new ArrayList();
+        while (numbers.size() < size) {
+            numbers.add(this.random.nextInt((max - min) + 1) + min);
+        }
+        return numbers;
+    }
+
     protected List<Character> getRandomNonRepeatingChars(List<Character> chars) {
         List<Character> randomizedChars = new ArrayList();
         int min = 0;
@@ -58,18 +67,25 @@ public class Randomizer {
     }
 
     protected double getRandomNote(Map<Double, int[]> inputMap) {
+        inputMap.forEach((K, V) -> System.out.println("Key: " + K + " ,Value: " + Arrays.toString(V)));
         Double[] keySetArray = inputMap.keySet().toArray(new Double[inputMap.keySet().size()]);
+        System.out.println("Key set array: " + Arrays.toString(keySetArray));
         int randomIndex = this.random.nextInt(inputMap.keySet().size());
+        System.out.println("Random index: " + randomIndex);
+        System.out.println("Key set array of random index: " + keySetArray[randomIndex]);
         return keySetArray[randomIndex];
     }
 
-    protected double getRandomNote(int notesInAChord, Map<Double, int[]> inputMap) {
+    /*protected double getRandomNote(int notesInAChord, Map<Double, int[]> inputMap) {
         double randomNote = getRandomNote(inputMap);
         while (randomNote * notesInAChord > 1) {
+            System.out.println("Random note * notesInAChord > 1");
+            System.out.println("Random note: " + randomNote);
+            System.out.println("notesInAChord: " + notesInAChord);
             randomNote = getRandomNote(inputMap);
         }
         return randomNote;
-    }
+    }*/
 
     protected int getRandomIrregularGroup(Map<Integer, Integer> inputMap) {
         Integer[] keySetArray = inputMap.keySet().toArray(new Integer[inputMap.keySet().size()]);

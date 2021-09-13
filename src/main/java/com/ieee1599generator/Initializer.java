@@ -20,19 +20,21 @@ public class Initializer {
     private List<Instrument> instruments = new ArrayList<>();
     private int[] metreInNumbers;
     private int measuresNumber;
+ //  private Map<Integer, String> pitchesMap;
 
     public Initializer(long trackLength, String metre, int bpm) {
-        LOGGER.log(Level.INFO, "Length of the track: " + trackLength);
-        LOGGER.log(Level.INFO, "Metre: " + metre);
-        LOGGER.log(Level.INFO, "BPM: " + bpm);
+        //LOGGER.log(Level.INFO, "Length of the track: " + trackLength);
+        //LOGGER.log(Level.INFO, "Metre: " + metre);
+       // LOGGER.log(Level.INFO, "BPM: " + bpm);
         this.metreInNumbers = new int[]{Integer.parseInt(String.valueOf(metre.charAt(0))), Integer.parseInt(String.valueOf(metre.charAt(2)))};
         this.measuresNumber = computeMeasuresNumber(bpm, trackLength, this.metreInNumbers);
+        
     }
 
     // da chiamare tante volte quanti sono gli strumenti musicali
     public void initializeInstrumentsParams(int maxNumberOfPlayedNotes, int[] minDuration, int[] maxDuration, int minHeight, int maxHeight, int maxNumberOfNotesInAChord, boolean areIrregularGroupsPresent, int minimumDelay) {
-        LOGGER.log(Level.INFO, "Minimum duration of musical figures: " + Arrays.toString(minDuration));
-        LOGGER.log(Level.INFO, "Maximum duration of musical figures: " + Arrays.toString(maxDuration));
+        //LOGGER.log(Level.INFO, "Minimum duration of musical figures: " + Arrays.toString(minDuration));
+        //LOGGER.log(Level.INFO, "Maximum duration of musical figures: " + Arrays.toString(maxDuration));
 
         Map<Double, int[]> notesMap = new TreeMap<>();
         for (int i = maxDuration[0]; i <= minDuration[0]; i *= 2) {

@@ -2,7 +2,7 @@ package com.ieee1599generator;
 
 import java.util.List;
 import java.util.Map;
-import java.util.TreeMap;
+import java.util.HashMap;
 import java.util.concurrent.Callable;
 import java.util.logging.Logger;
 import picocli.CommandLine;
@@ -65,37 +65,11 @@ public class IEEE1599App implements Callable<Void> {
         int minimumDelay;
     }
 
-    /*
-    @Option(names = {"--max-notes-number"}, description = "maximum number of played notes")
-    private int maxNumberOfPlayedNotes;
-
-    // da mettere interactive
-    @Option(names = {"--min-duration"}, split = ",", description = "minimum duration of musical figures")
-    private int[] minDuration;
-
-    // da mettere interactive
-    @Option(names = {"--max-duration"}, split = ",", description = "maximum duration of musical figures")
-    private int[] maxDuration;
-
-    @Option(names = {"--min-height"}, description = "minimum heigth of musical figures")
-    private int minHeight;
-
-    @Option(names = {"--max-height"}, description = "maximum heigth of musical figures")
-    private int maxHeight;
-
-    @Option(names = {"--max-notes-number-chord"}, description = "maximum number of notes in a chord")
-    private int maxNumberOfNotesInAChord;
-
-    @Option(names = "--irregular-groups")
-    private boolean areIrregularGroupsPresent;
-
-    @Option(names = {"--min-delay"}, description = "minimum delay in VTU after which the next note will sound")
-    private int minimumDelay;*/
     private List<Character> clefs = List.of('G', 'F', 'C');
 
     private List<Integer> clefsSteps = List.of(2, 4, 6);
 
-    private Map<Integer, String> pitchesMap = new TreeMap<Integer, String>() {
+    private Map<Integer, String> pitchesMap = new HashMap<Integer, String>() {
         {
             put(0, "C");
             put(1, "C-sharp");
@@ -112,9 +86,9 @@ public class IEEE1599App implements Callable<Void> {
         }
     };
 
-    private int octavesNumber;
+    private int octavesNumber = 10;
 
-    @Option(names = {"--seed"}, defaultValue = "1234", description = "seed for random object (default: ${DGenerator generator = new Generator();EFAULT-VALUE})")
+    @Option(names = {"--seed"}, defaultValue = "1234", description = "seed for random object (default: ${DEFAULT-VALUE})")
     private long seed;
 
     @Override
