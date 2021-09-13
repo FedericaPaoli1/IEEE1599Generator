@@ -69,20 +69,29 @@ public class IEEE1599App implements Callable<Void> {
 
     private List<Integer> clefsSteps = List.of(2, 4, 6);
 
-    private Map<Integer, String> pitchesMap = new HashMap<Integer, String>() {
+    private Map<String, Integer> accidentalMap = new HashMap<String, Integer>() {
         {
-            put(0, "C");
-            put(1, "C-sharp");
-            put(2, "D");
-            put(3, "D-sharp");
-            put(4, "E");
-            put(5, "F");
-            put(6, "F-sharp");
-            put(7, "G");
-            put(8, "G-sharp");
-            put(9, "A");
-            put(10, "B-sharp");
-            put(11, "B");
+            put("sharp", 1);
+            put("flat", -1);
+            put("double_sharp", 2);
+            put("double_flat", -2);
+        }
+    };
+
+    private Map<Integer, Character> pitchesMap = new HashMap<Integer, Character>() {
+        {
+            put(0, 'C');
+            put(1, ' ');
+            put(2, 'D');
+            put(3, ' ');
+            put(4, 'E');
+            put(5, 'F');
+            put(6, ' ');
+            put(7, 'G');
+            put(8, ' ');
+            put(9, 'A');
+            put(10, ' ');
+            put(11, 'B');
         }
     };
 
@@ -116,6 +125,7 @@ public class IEEE1599App implements Callable<Void> {
                     .instruments(initializer.getInstruments())
                     .clefs(clefs)
                     .clefsSteps(clefsSteps)
+                    .accidentalMap(accidentalMap)
                     .pitchesMap(pitchesMap)
                     .octavesNumber(octavesNumber)
                     .metreInNumbers(initializer.getMetreInNumbers())

@@ -19,7 +19,8 @@ public class FormatterBuilder {
     private List<Instrument> instruments;
     private List<Character> clefs;
     private List<Integer> clefsSteps;
-    private Map<Integer, String> pitchesMap;
+    private Map<String, Integer> accidentalMap;
+    private Map<Integer, Character> pitchesMap;
     private int octavesNumber;
     private int[] metreInNumbers;
     private int measuresNumber;
@@ -30,7 +31,7 @@ public class FormatterBuilder {
     public static FormatterBuilder newBuilder() {
         return new FormatterBuilder();
     }
-    
+
     public FormatterBuilder seed(long seed) {
         this.seed = seed;
         return this;
@@ -76,7 +77,12 @@ public class FormatterBuilder {
         return this;
     }
 
-    public FormatterBuilder pitchesMap(Map<Integer, String> pitchesMap) {
+    public FormatterBuilder accidentalMap(Map<String, Integer> accidentalMap) {
+        this.accidentalMap = accidentalMap;
+        return this;
+    }
+    
+    public FormatterBuilder pitchesMap(Map<Integer, Character> pitchesMap) {
         this.pitchesMap = pitchesMap;
         return this;
     }
@@ -97,7 +103,7 @@ public class FormatterBuilder {
     }
 
     public Formatter build() {
-        return new Formatter(seed, creator, docVersion, title, author, instrumentsNumber, instruments, clefs, clefsSteps, pitchesMap, octavesNumber, metreInNumbers, measuresNumber);
+        return new Formatter(seed, creator, docVersion, title, author, instrumentsNumber, instruments, clefs, clefsSteps, accidentalMap, pitchesMap, octavesNumber, metreInNumbers, measuresNumber);
     }
 
 }

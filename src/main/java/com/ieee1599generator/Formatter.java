@@ -38,12 +38,13 @@ public class Formatter {
     private List<Instrument> instruments;
     private List<Character> clefs;
     private List<Integer> clefsSteps;
-    private Map<Integer, String> pitchesMap;
+    private Map<String, Integer> accidentalMap;
+    private Map<Integer, Character> pitchesMap;
     private int octavesNumber;
     private int[] metreInNumbers;
     private int measuresNumber;
 
-    public Formatter(long seed, String creator, double docVersion, String title, String author, int instrumentsNumber, List<Instrument> instruments, List<Character> clefs, List<Integer> clefsSteps, Map<Integer, String> pitchesMap, int octavesNumber, int[] metreInNumbers, int measuresNumber) {
+    public Formatter(long seed, String creator, double docVersion, String title, String author, int instrumentsNumber, List<Instrument> instruments, List<Character> clefs, List<Integer> clefsSteps, Map<String, Integer> accidentalMap, Map<Integer, Character> pitchesMap, int octavesNumber, int[] metreInNumbers, int measuresNumber) {
         this.randomizer = new Randomizer(seed);
         //LOGGER.log(Level.INFO, "Randomizer seed: " + seed);
         this.creator = creator;
@@ -60,6 +61,7 @@ public class Formatter {
         //LOGGER.log(Level.INFO, "Instruments: " + );
         this.clefs = clefs;
         this.clefsSteps = clefsSteps;
+        this.accidentalMap = accidentalMap;
         this.pitchesMap = pitchesMap;
         this.octavesNumber = octavesNumber;
         this.metreInNumbers = metreInNumbers;
@@ -68,23 +70,23 @@ public class Formatter {
 
     public void format() {
 
-        LOGGER.log(Level.INFO, "Create document");
+        //LOGGER.log(Level.INFO, "Create document");
         createDocument();
 
-        LOGGER.log(Level.INFO, "Create general layer");
+        //LOGGER.log(Level.INFO, "Create general layer");
         Element ieee1599 = createGeneralLayer();
 
-        LOGGER.log(Level.INFO, "Create logic layer");
+        //LOGGER.log(Level.INFO, "Create logic layer");
         createLogicLayer(ieee1599);
     }
 
     private void createLogicLayer(Element ieee1599) throws NumberFormatException {
         Element logic = addLogicElement(ieee1599);
 
-        LOGGER.log(Level.INFO, "Create spine container");
+        //LOGGER.log(Level.INFO, "Create spine container");
         createSpineContainer(logic);
 
-        LOGGER.log(Level.INFO, "Create los container");
+        //LOGGER.log(Level.INFO, "Create los container");
         createLosContainer(logic);
     }
 
@@ -98,7 +100,7 @@ public class Formatter {
 
             addStaffListComponents(i, staffList);
 
-            LOGGER.log(Level.INFO, "Create part element");
+            //LOGGER.log(Level.INFO, "Create part element");
             createPartElement(i, los);
         }
     }
@@ -106,10 +108,10 @@ public class Formatter {
     private void createPartElement(int i, Element los) throws NumberFormatException {
         Element part = addPartElement(i, los);
 
-        LOGGER.log(Level.INFO, "Create voice list container");
+        //LOGGER.log(Level.INFO, "Create voice list container");
         createVoiceListContainer(part, i);
 
-        LOGGER.log(Level.INFO, "Create measure elements");
+        //LOGGER.log(Level.INFO, "Create measure elements");
         createMeasureElements(part, i);
     }
 
@@ -119,13 +121,13 @@ public class Formatter {
 
             Element measure = addMeasureElement(j, part);
 
-            LOGGER.log(Level.INFO, "Create voice element");
+            //LOGGER.log(Level.INFO, "Create voice element");
             createVoiceElement(i, measure, j);
         }
     }
 
     private void createVoiceElement(int i, Element measure, int j) throws NumberFormatException {
-        LOGGER.log(Level.INFO, "Add voice element");
+        //LOGGER.log(Level.INFO, "Add voice element");
         Element voice = addVoiceElement(i, measure);
 
         String attributeString = "Instrument_" + (i + 1) + "_voice0_measure" + j + "_";
@@ -143,7 +145,8 @@ public class Formatter {
 
         List<Character> notesAndRests = createNotesAndRestsList(eventsNumber, notesNumberInAMeasure, restsNumberInAMeasure);
 
-        Collections.shuffle(notesAndRests);
+        //Collections.shuffle(notesAndRests);
+        this.randomizer.shuffleList(notesAndRests);
 
         /*notesAndRests.forEach(c -> {
         System.out.println(c);
@@ -166,16 +169,17 @@ public class Formatter {
                 .findFirst()
                 .orElse(new ArrayList<Double>());
 
-        Collections.shuffle(correctNotesAndRests);
+        //Collections.shuffle(correctNotesAndRests);
+        this.randomizer.shuffleList(correctNotesAndRests);
 
         for (int k = 0; k < notesAndRests.size(); k++) {
 
             if (notesAndRests.get(k) == 'N') {
-                LOGGER.log(Level.INFO, "Create chord elements");
+                // LOGGER.log(Level.INFO, "Create chord elements");
                 createChordElements(i, j, k, voice, notesInAChord, correctNotesAndRests, randomPitches);
 
             } else {
-                LOGGER.log(Level.INFO, "Create rest elements");
+                //  LOGGER.log(Level.INFO, "Create rest elements");
                 createRestElements(i, j, k, voice, correctNotesAndRests);
             }
         }
@@ -194,9 +198,8 @@ public class Formatter {
             setAttributeOfElement(rest, "event_ref", eventRef);
             appendChildToElement(voice, rest);
 
-            LOGGER.log(Level.INFO, "Get random note");
+            // LOGGER.log(Level.INFO, "Get random note");
             //double randomNote = this.randomizer.getRandomNote(instruments.get(i).getNotesMap());
-
             double randomNote = correctNotesAndRests.remove(0);
             createDurationElement(i, randomNote, rest, k, event);
         } else {
@@ -252,15 +255,7 @@ public class Formatter {
         for (int h = 1; h <= notesInAChord; h++) {
             Element notehead = addNoteheadElement(chord);
 
-            Element pitch = addPitchElement(randomPitches, k, notehead);
-
-            if (pitchesMap.get(randomPitches.get(k)).length() > 1) {
-                setAttributeOfElement(pitch, "actual_accidental", "sharp");
-
-                addPrintedAccidentalsElement(notehead);
-
-                addSharpElement(notehead);
-            }
+            addPitchElement(randomPitches, k, notehead);
         }
     }
 
@@ -391,9 +386,9 @@ public class Formatter {
         return duration;
     }
 
-    private void addSharpElement(Element notehead) {
-        Element sharp = addElementToDocument(this.document, "sharp");
-        appendChildToElement(notehead, sharp);
+    private void addAccidentalElement(String accidentalType, Element notehead) {
+        Element accidental = addElementToDocument(this.document, accidentalType);
+        appendChildToElement(notehead, accidental);
     }
 
     private void addPrintedAccidentalsElement(Element notehead) {
@@ -401,16 +396,76 @@ public class Formatter {
         appendChildToElement(notehead, printedAccidentals);
     }
 
-    private Element addPitchElement(List<Integer> randomPitches, int k, Element notehead) {
+    private void addPitchElement(List<Integer> randomPitches, int k, Element notehead) {
+        char randomPitch = pitchesMap.get(randomPitches.get(k));
+
+        String randomAccidental = this.randomizer.getRandomAccidental(accidentalMap);
+
         Element pitch = addElementToDocument(this.document, "pitch");
-        setAttributeOfElement(pitch, "actual_accidental", "natural");
         int randomOctave = this.randomizer.getRandomInteger(0, octavesNumber);
 
         setAttributeOfElement(pitch, "octave", "" + randomOctave);
-        setAttributeOfElement(pitch, "step", "" + pitchesMap.get(randomPitches.get(k)).charAt(0));
 
-        appendChildToElement(notehead, pitch);
-        return pitch;
+        if (randomPitch == ' ') {
+            int newPitchIndex = randomPitches.get(k) + accidentalMap.get(randomAccidental);
+
+            if (newPitchIndex < 0) {
+                newPitchIndex = 11 + accidentalMap.get(randomAccidental);
+            }
+
+            if (newPitchIndex > 11) {
+                newPitchIndex = 0 + accidentalMap.get(randomAccidental);
+            }
+
+            randomPitch = pitchesMap.get(newPitchIndex);
+            if (randomPitch == ' ') {
+                if (this.randomizer.getRandomString(new String[]{"sharp", "flat"}).equals("sharp")) {
+                    randomPitch = pitchesMap.get(newPitchIndex + 1);
+
+                    setAttributeOfElement(pitch, "actual_accidental", "" + randomAccidental);
+
+                    setAttributeOfElement(pitch, "step", "" + randomPitch + "-" + "sharp");
+
+                    appendChildToElement(notehead, pitch);
+
+                    addPrintedAccidentalsElement(notehead);
+
+                    addAccidentalElement(randomAccidental, notehead);
+                } else {
+                    randomPitch = pitchesMap.get(newPitchIndex - 1);
+
+                    setAttributeOfElement(pitch, "actual_accidental", "" + randomAccidental);
+
+                    setAttributeOfElement(pitch, "step", "" + randomPitch + "-" + "flat");
+
+                    appendChildToElement(notehead, pitch);
+
+                    addPrintedAccidentalsElement(notehead);
+
+                    addAccidentalElement(randomAccidental, notehead);
+                }
+            } else {
+                setAttributeOfElement(pitch, "actual_accidental", "" + randomAccidental);
+
+                setAttributeOfElement(pitch, "step", "" + randomPitch);
+
+                appendChildToElement(notehead, pitch);
+
+                addPrintedAccidentalsElement(notehead);
+
+                addAccidentalElement(randomAccidental, notehead);
+
+            }
+
+        } else {
+            setAttributeOfElement(pitch, "actual_accidental", "natural");
+
+            setAttributeOfElement(pitch, "step", "" + randomPitch);
+
+            appendChildToElement(notehead, pitch);
+
+        }
+
     }
 
     private Element addNoteheadElement(Element chord) {

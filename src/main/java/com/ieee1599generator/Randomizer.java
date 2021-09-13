@@ -2,6 +2,7 @@ package com.ieee1599generator;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Random;
@@ -20,6 +21,10 @@ public class Randomizer {
 
     protected int getRandomInteger(int min, int max) {
         return this.random.nextInt((max - min) + 1) + min;
+    }
+    
+     protected String getRandomString(String[] strings) {
+        return strings[this.random.nextInt(strings.length)];
     }
 
     protected int getRandomIntegerFromList(List<Integer> ints) {
@@ -67,26 +72,21 @@ public class Randomizer {
     }
 
     protected double getRandomNote(Map<Double, int[]> inputMap) {
-        inputMap.forEach((K, V) -> System.out.println("Key: " + K + " ,Value: " + Arrays.toString(V)));
         Double[] keySetArray = inputMap.keySet().toArray(new Double[inputMap.keySet().size()]);
-        System.out.println("Key set array: " + Arrays.toString(keySetArray));
         int randomIndex = this.random.nextInt(inputMap.keySet().size());
-        System.out.println("Random index: " + randomIndex);
-        System.out.println("Key set array of random index: " + keySetArray[randomIndex]);
         return keySetArray[randomIndex];
     }
 
-    /*protected double getRandomNote(int notesInAChord, Map<Double, int[]> inputMap) {
-        double randomNote = getRandomNote(inputMap);
-        while (randomNote * notesInAChord > 1) {
-            System.out.println("Random note * notesInAChord > 1");
-            System.out.println("Random note: " + randomNote);
-            System.out.println("notesInAChord: " + notesInAChord);
-            randomNote = getRandomNote(inputMap);
-        }
-        return randomNote;
-    }*/
-
+    protected <T> void shuffleList(List<T> inputList) {
+        Collections.shuffle(inputList, this.random);
+    }
+    
+    protected String getRandomAccidental(Map<String, Integer> inputMap) {
+        String[] keySetArray = inputMap.keySet().toArray(new String[inputMap.keySet().size()]);
+        int randomIndex = this.random.nextInt(inputMap.keySet().size());
+        return keySetArray[randomIndex];
+    }
+    
     protected int getRandomIrregularGroup(Map<Integer, Integer> inputMap) {
         Integer[] keySetArray = inputMap.keySet().toArray(new Integer[inputMap.keySet().size()]);
         int randomIndex = this.random.nextInt(inputMap.keySet().size());
