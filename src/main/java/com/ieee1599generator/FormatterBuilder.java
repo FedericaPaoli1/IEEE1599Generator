@@ -2,27 +2,72 @@ package com.ieee1599generator;
 
 import java.util.List;
 import java.util.Map;
-import java.util.TreeMap;
 
 /**
+ * FormatterBuilder is the class implementing the Builder pattern for the
+ * Formatter class
  *
- * @author federica
+ * @author Federica Paoli', id: 961887, e-mail:
+ * federica.paoli1@studenti.unimi.it
  */
 public class FormatterBuilder {
 
+    /**
+     * The seed for the random object in order to replicate the same random
+     * values for several app executions
+     */
     private long seed;
+    /**
+     * The document creator name
+     */
     private String creator;
+    /**
+     * The document version
+     */
     private double docVersion;
+    /**
+     * The document title name
+     */
     private String title;
+    /**
+     * The document author name
+     */
     private String author;
+    /**
+     * The number of musical instruments
+     */
     private int instrumentsNumber;
+    /**
+     * The list of musical instruments, each with its own parameters
+     */
     private List<Instrument> instruments;
+    /**
+     * The list of clefs
+     */
     private List<Character> clefs;
+    /**
+     * The list of clefs steps
+     */
     private List<Integer> clefsSteps;
+    /**
+     * The map of accidentals
+     */
     private Map<String, Integer> accidentalMap;
+    /**
+     * The map of pitches
+     */
     private Map<Integer, Character> pitchesMap;
+    /**
+     * The number of available octaves
+     */
     private int octavesNumber;
+    /**
+     * The metre converted from a string into numbers
+     */
     private int[] metreInNumbers;
+    /**
+     * The number of available measures
+     */
     private int measuresNumber;
 
     private FormatterBuilder() {
@@ -81,7 +126,7 @@ public class FormatterBuilder {
         this.accidentalMap = accidentalMap;
         return this;
     }
-    
+
     public FormatterBuilder pitchesMap(Map<Integer, Character> pitchesMap) {
         this.pitchesMap = pitchesMap;
         return this;

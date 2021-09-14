@@ -1,11 +1,8 @@
 package com.ieee1599generator;
 
 import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
 import java.util.List;
 import java.util.Map;
-import java.util.HashMap;
 import java.util.Optional;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -19,53 +16,122 @@ import org.w3c.dom.Element;
 import org.paukov.combinatorics3.Generator;
 
 /**
+ * Formatter is the class that formats the entire IEEE1599 document
  *
- * @author federica
+ * @author Federica Paoli', id: 961887, e-mail:
+ * federica.paoli1@studenti.unimi.it
  */
 public class Formatter {
 
-    private static final Logger LOGGER = Logger.getLogger(Generator.class.getName());
+    private static final Logger LOGGER = Logger.getLogger(Formatter.class.getName());
 
+    /**
+     * The randomizer object
+     */
     private final Randomizer randomizer;
+    /**
+     * The document object
+     */
     private Document document;
+    /**
+     * The list of all events of the document
+     */
     private final List<Element> eventsList = new ArrayList<>();
+    /**
+     * The definition or non-definition of the first events in the document
+     */
     private boolean areFirstEventsDefined = false;
+    /**
+     * The document creator name
+     */
     private String creator;
+    /**
+     * The document version
+     */
     private double docVersion;
+    /**
+     * The document title name
+     */
     private String title;
+    /**
+     * The document author name
+     */
     private String author;
+    /**
+     * The number of musical instruments
+     */
     private int instrumentsNumber;
+    /**
+     * The list of musical instruments, each with its own parameters
+     */
     private List<Instrument> instruments;
+    /**
+     * The list of clefs
+     */
     private List<Character> clefs;
+    /**
+     * The list of clefs steps
+     */
     private List<Integer> clefsSteps;
+    /**
+     * The map of accidentals
+     */
     private Map<String, Integer> accidentalMap;
+    /**
+     * The map of pitches
+     */
     private Map<Integer, Character> pitchesMap;
+    /**
+     * The number of available octaves
+     */
     private int octavesNumber;
+    /**
+     * The metre converted from a string into numbers
+     */
     private int[] metreInNumbers;
+    /**
+     * The number of available measures
+     */
     private int measuresNumber;
 
     public Formatter(long seed, String creator, double docVersion, String title, String author, int instrumentsNumber, List<Instrument> instruments, List<Character> clefs, List<Integer> clefsSteps, Map<String, Integer> accidentalMap, Map<Integer, Character> pitchesMap, int octavesNumber, int[] metreInNumbers, int measuresNumber) {
+        LOGGER.log(Level.INFO, "Inputs");
         this.randomizer = new Randomizer(seed);
-        //LOGGER.log(Level.INFO, "Randomizer seed: " + seed);
+        LOGGER.log(Level.INFO, "Randomizer seed: " + seed);
         this.creator = creator;
-        //LOGGER.log(Level.INFO, "Creator: " + this.creator);
+        LOGGER.log(Level.INFO, "Creator: " + this.creator);
         this.docVersion = docVersion;
-        //LOGGER.log(Level.INFO, "Document version: " + this.docVersion);
+        LOGGER.log(Level.INFO, "Document version: " + this.docVersion);
         this.title = title;
-        //LOGGER.log(Level.INFO, "Title: " + this.title);
+        LOGGER.log(Level.INFO, "Title: " + this.title);
         this.author = author;
-        //LOGGER.log(Level.INFO, "Author: " + this.author);
+        LOGGER.log(Level.INFO, "Author: " + this.author);
         this.instrumentsNumber = instrumentsNumber;
-        //LOGGER.log(Level.INFO, "Number of instruments: " + this.instrumentsNumber);
+        LOGGER.log(Level.INFO, "Number of instruments: " + this.instrumentsNumber);
         this.instruments = instruments;
-        //LOGGER.log(Level.INFO, "Instruments: " + );
+        for (int i = 0; i < this.instrumentsNumber; i++) {
+            LOGGER.log(Level.INFO, "Instrument " + i + ": " + this.instruments.get(i).toString());
+        }
         this.clefs = clefs;
+        LOGGER.log(Level.INFO, "Clefs:");
+        for (Character c : clefs) {
+            LOGGER.log(Level.INFO, "" + c);
+        }
         this.clefsSteps = clefsSteps;
+        LOGGER.log(Level.INFO, "Clefs steps:");
+        for (Integer i : clefsSteps) {
+            LOGGER.log(Level.INFO, "" + i);
+        }
         this.accidentalMap = accidentalMap;
+        LOGGER.log(Level.INFO, "Accidentals map: " + mapAsString(this.accidentalMap));
         this.pitchesMap = pitchesMap;
+        LOGGER.log(Level.INFO, "Pitches map: " + mapAsString(this.pitchesMap));
         this.octavesNumber = octavesNumber;
+        LOGGER.log(Level.INFO, "Octaves number: " + this.octavesNumber);
         this.metreInNumbers = metreInNumbers;
+        LOGGER.log(Level.INFO, "Metre: " + metreInNumbers[0] + ":" + metreInNumbers[1]);
         this.measuresNumber = measuresNumber;
+        LOGGER.log(Level.INFO, "Measures number: " + this.measuresNumber);
     }
 
     public void format() {
@@ -237,7 +303,7 @@ public class Formatter {
 
             //double randomNote = this.randomizer.getRandomNote(instruments.get(i).getNotesMap());
             double randomNote = correctNotesAndRests.remove(0);
-            int irregularGroup = this.randomizer.getRandomIrregularGroup(instruments.get(i).getIrregularGroupsMap());
+            int irregularGroup = this.randomizer.getRandomIntFromMap(instruments.get(i).getIrregularGroupsMap());
 
             createDurationElement(i, randomNote, chord, k, event, irregularGroup);
 
@@ -399,7 +465,7 @@ public class Formatter {
     private void addPitchElement(List<Integer> randomPitches, int k, Element notehead) {
         char randomPitch = pitchesMap.get(randomPitches.get(k));
 
-        String randomAccidental = this.randomizer.getRandomAccidental(accidentalMap);
+        String randomAccidental = this.randomizer.getRandomStringFromMap(accidentalMap);
 
         Element pitch = addElementToDocument(this.document, "pitch");
         int randomOctave = this.randomizer.getRandomInteger(0, octavesNumber);
@@ -529,8 +595,8 @@ public class Formatter {
     private void addClefElement(int i, Element staff) {
         Element clef = addElementToDocument(this.document, "clef");
         setAttributeOfElement(clef, "event_ref", "Clef_Instrument_" + (i + 1) + "_1");
-        setAttributeOfElement(clef, "shape", "" + this.randomizer.getRandomCharFromList(clefs));
-        setAttributeOfElement(clef, "staff_step", "" + this.randomizer.getRandomIntegerFromList(clefsSteps));
+        setAttributeOfElement(clef, "shape", "" + this.randomizer.getRandomElementFromList(clefs));
+        setAttributeOfElement(clef, "staff_step", "" + this.randomizer.getRandomElementFromList(clefsSteps));
         setAttributeOfElement(clef, "octave_num", "" + 0);
         appendChildToElement(staff, clef);
     }
@@ -679,5 +745,12 @@ public class Formatter {
 
     private void setTextContentOfElement(Element element, String string) {
         element.setTextContent(string);
+    }
+
+    private <T, R> String mapAsString(Map<T, R> map) {
+        String mapAsString = map.keySet().stream()
+                .map(key -> key + "=" + map.get(key))
+                .collect(Collectors.joining(", ", "{", "}"));
+        return mapAsString;
     }
 }

@@ -1,48 +1,72 @@
 package com.ieee1599generator;
 
-import java.time.Duration;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 
 /**
+ * Initializer is the class that initializes some of the input parameters
  *
- * @author federica
+ * @author Federica Paoli', id: 961887, e-mail:
+ * federica.paoli1@studenti.unimi.it
  */
 public class Initializer {
 
-    private static final Logger LOGGER = Logger.getLogger(Initializer.class.getName());
-
-    private List<Instrument> instruments = new ArrayList<>();
-    private int[] metreInNumbers;
-    private int measuresNumber;
- //  private Map<Integer, String> pitchesMap;
+    /**
+     * The list of musical instruments, each with its own parameters
+     */
+    private final List<Instrument> instruments = new ArrayList<>();
+    /**
+     * The metre converted from a string into numbers
+     */
+    private final int[] metreInNumbers;
+    /**
+     * The number of available measures
+     */
+    private final int measuresNumber;
 
     public Initializer(long trackLength, String metre, int bpm) {
-        //LOGGER.log(Level.INFO, "Length of the track: " + trackLength);
-        //LOGGER.log(Level.INFO, "Metre: " + metre);
-       // LOGGER.log(Level.INFO, "BPM: " + bpm);
+
         this.metreInNumbers = new int[]{Integer.parseInt(String.valueOf(metre.charAt(0))), Integer.parseInt(String.valueOf(metre.charAt(2)))};
         this.measuresNumber = computeMeasuresNumber(bpm, trackLength, this.metreInNumbers);
-        
+
     }
 
-    // da chiamare tante volte quanti sono gli strumenti musicali
+    /**
+     * <p>
+     * initializeInstrumentsParams is the method that initializes its input
+     * parameters, so that they can be used more easily within the document to
+     * be created.
+     * </p>
+     *
+     * @param maxNumberOfPlayedNotes the maximum number of played notes
+     * @param minDuration the array representing the minimum duration of musical
+     * figures
+     * @param maxDuration the array representing the maximum duration of musical
+     * figures
+     * @param minHeight the minimum height of musical figure
+     * @param maxHeight the minimum height of musical figure
+     * @param maxNumberOfNotesInAChord the maximum number of notes in a chord
+     * @param areIrregularGroupsPresent the presence or absence of irregular
+     * groups
+     * @param minimumDelay the minimum delay, expressed in VTU, after which the
+     * next note will sound
+     */
     public void initializeInstrumentsParams(int maxNumberOfPlayedNotes, int[] minDuration, int[] maxDuration, int minHeight, int maxHeight, int maxNumberOfNotesInAChord, boolean areIrregularGroupsPresent, int minimumDelay) {
-        //LOGGER.log(Level.INFO, "Minimum duration of musical figures: " + Arrays.toString(minDuration));
-        //LOGGER.log(Level.INFO, "Maximum duration of musical figures: " + Arrays.toString(maxDuration));
 
+        // fill the map of the notes from from that of maximum duration to that of minimum duration
         Map<Double, int[]> notesMap = new TreeMap<>();
         for (int i = maxDuration[0]; i <= minDuration[0]; i *= 2) {
             notesMap.put((double) 1 / i, new int[]{i, 1});
         }
+
+        // compute the maximum number of events
         int maxNumberOfEvents = (int) ((((double) 1 / this.metreInNumbers[1]) / ((double) minDuration[1] / minDuration[0])) * this.metreInNumbers[0]);
+
+        // fill the map of the irregular groups
         Map<Integer, Integer> irregularGroupsMap = new TreeMap<>();
-        if (this.metreInNumbers[0] % 3 == 0 && this.metreInNumbers[1] % 2 == 0) {   // time signature is compound
+        if (this.metreInNumbers[0] % 3 == 0 && this.metreInNumbers[1] % 2 == 0) {   // check if time signature is compound
             irregularGroupsMap.put(2, 1);
             irregularGroupsMap.put(4, 2);
             irregularGroupsMap.put(5, 2);
@@ -60,15 +84,27 @@ public class Initializer {
             irregularGroupsMap.put(13, 8);
         }
 
+        // create a new instrument with the initialized parameters
         instruments.add(new Instrument(maxNumberOfPlayedNotes, minDuration, maxDuration, minHeight, maxHeight, maxNumberOfNotesInAChord, areIrregularGroupsPresent, minimumDelay, notesMap, maxNumberOfEvents, irregularGroupsMap));
 
     }
 
-    private int computeMeasuresNumber(int bpm, long pieceLength, int[] metre) {
+    /**
+     * <p>
+     * computeMeasuresNumber is the method that computes the number of measures
+     * </p>
+     *
+     * @param bpm the time expressed in beats per minute (bpm)
+     * @param trackLength the track length expressed in seconds
+     * @param metre
+     *
+     * @return the number of measures
+     */
+    private int computeMeasuresNumber(int bpm, long trackLength, int[] metre) {
         double bps = (double) bpm / 60;
         int beatsNumber = metre[0];
         double oneBeatLength = 1 / bps;
-        return (int) (pieceLength / (oneBeatLength * beatsNumber));
+        return (int) (trackLength / (oneBeatLength * beatsNumber));
     }
 
     public List<Instrument> getInstruments() {
