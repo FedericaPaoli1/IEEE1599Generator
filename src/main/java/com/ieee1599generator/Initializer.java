@@ -85,7 +85,7 @@ public class Initializer {
         }
 
         // create a new instrument with the initialized parameters
-        instruments.add(new Instrument(maxNumberOfPlayedNotes, minDuration, maxDuration, minHeight, maxHeight, maxNumberOfNotesInAChord, areIrregularGroupsPresent, minimumDelay, notesMap, maxNumberOfEvents, irregularGroupsMap));
+        instruments.add(new Instrument(maxNumberOfPlayedNotes, minDuration, maxDuration, minHeight, maxHeight, maxNumberOfNotesInAChord, areIrregularGroupsPresent, minimumDelay, notesMap, maxNumberOfEvents));
 
     }
 

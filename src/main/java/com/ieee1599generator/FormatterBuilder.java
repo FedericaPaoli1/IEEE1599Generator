@@ -69,6 +69,10 @@ public class FormatterBuilder {
      * The number of available measures
      */
     private int measuresNumber;
+    /**
+     * The map of irregular groups
+     */
+    private Map<Integer, Integer> irregularGroupsMap;
 
     private FormatterBuilder() {
     }
@@ -146,9 +150,14 @@ public class FormatterBuilder {
         this.measuresNumber = measuresNumber;
         return this;
     }
+    
+    public FormatterBuilder irregularGroupsMap(Map<Integer, Integer> irregularGroupsMap) {
+        this.irregularGroupsMap = this.irregularGroupsMap;
+        return this;
+    }
 
     public Formatter build() {
-        return new Formatter(seed, creator, docVersion, title, author, instrumentsNumber, instruments, clefs, clefsSteps, accidentalMap, pitchesMap, octavesNumber, metreInNumbers, measuresNumber);
+        return new Formatter(seed, creator, docVersion, title, author, instrumentsNumber, instruments, clefs, clefsSteps, accidentalMap, pitchesMap, octavesNumber, metreInNumbers, measuresNumber, irregularGroupsMap);
     }
 
 }

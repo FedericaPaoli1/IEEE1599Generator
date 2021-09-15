@@ -57,7 +57,7 @@ public class Instrument {
      */
     private Map<Integer, Integer> irregularGroupsMap = new TreeMap<>();
 
-    public Instrument(int maxNumberOfPlayedNotes, int[] minDuration, int[] maxDuration, int minHeight, int maxHeight, int maxNumberOfNotesInAChord, boolean areIrregularGroupsPresent, int minimumDelay, Map<Double, int[]> notesMap, int maxNumberOfEvents, Map<Integer, Integer> irregularGroupsMap) {
+    public Instrument(int maxNumberOfPlayedNotes, int[] minDuration, int[] maxDuration, int minHeight, int maxHeight, int maxNumberOfNotesInAChord, boolean areIrregularGroupsPresent, int minimumDelay, Map<Double, int[]> notesMap, int maxNumberOfEvents) {
         this.maxNumberOfPlayedNotes = maxNumberOfPlayedNotes;
         this.minDuration = minDuration;
         this.maxDuration = maxDuration;
@@ -68,7 +68,6 @@ public class Instrument {
         this.minimumDelay = minimumDelay;
         this.notesMap = notesMap;
         this.maxNumberOfEvents = maxNumberOfEvents;
-        this.irregularGroupsMap = irregularGroupsMap;
     }
 
     public int getMaxNumberOfPlayedNotes() {
@@ -111,10 +110,6 @@ public class Instrument {
         return this.maxNumberOfEvents;
     }
 
-    public Map<Integer, Integer> getIrregularGroupsMap() {
-        return this.irregularGroupsMap;
-    }
-
     private <T, R> String mapAsString(Map<T, R> map) {
         String mapAsString = map.keySet().stream()
                 .map(key -> key + "=" + map.get(key))
@@ -133,9 +128,7 @@ public class Instrument {
                 + ", are irregular groups present? " + this.areIrregularGroupsPresent
                 + ", minimum delay: " + this.minimumDelay
                 + ", notes map:\n" + mapAsString(this.notesMap)
-                + "\nmaximum number of events: " + this.maxNumberOfEvents
-                + ", irregular groups map:\n" + mapAsString(this.irregularGroupsMap);
-
+                + "\nmaximum number of events: " + this.maxNumberOfEvents;
     }
 
 }

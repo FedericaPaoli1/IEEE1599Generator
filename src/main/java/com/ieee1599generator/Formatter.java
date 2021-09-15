@@ -3,6 +3,7 @@ package com.ieee1599generator;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.NoSuchElementException;
 import java.util.Optional;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -10,7 +11,6 @@ import java.util.stream.Collectors;
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
-import org.w3c.dom.DOMException;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.paukov.combinatorics3.Generator;
@@ -93,45 +93,61 @@ public class Formatter {
      * The number of available measures
      */
     private int measuresNumber;
+    /**
+     * The map of irregular groups
+     */
+    private Map<Integer, Integer> irregularGroupsMap;
 
-    public Formatter(long seed, String creator, double docVersion, String title, String author, int instrumentsNumber, List<Instrument> instruments, List<Character> clefs, List<Integer> clefsSteps, Map<String, Integer> accidentalMap, Map<Integer, Character> pitchesMap, int octavesNumber, int[] metreInNumbers, int measuresNumber) {
+    public Formatter(long seed, String creator, double docVersion, String title, String author, int instrumentsNumber, List<Instrument> instruments, List<Character> clefs, List<Integer> clefsSteps, Map<String, Integer> accidentalMap, Map<Integer, Character> pitchesMap, int octavesNumber, int[] metreInNumbers, int measuresNumber, Map<Integer, Integer> irregularGroupsMap) {
         LOGGER.log(Level.INFO, "Inputs");
+
         this.randomizer = new Randomizer(seed);
         LOGGER.log(Level.INFO, "Randomizer seed: " + seed);
+
         this.creator = creator;
         LOGGER.log(Level.INFO, "Creator: " + this.creator);
+
         this.docVersion = docVersion;
         LOGGER.log(Level.INFO, "Document version: " + this.docVersion);
+
         this.title = title;
         LOGGER.log(Level.INFO, "Title: " + this.title);
+
         this.author = author;
         LOGGER.log(Level.INFO, "Author: " + this.author);
+
         this.instrumentsNumber = instrumentsNumber;
         LOGGER.log(Level.INFO, "Number of instruments: " + this.instrumentsNumber);
+
         this.instruments = instruments;
         for (int i = 0; i < this.instrumentsNumber; i++) {
             LOGGER.log(Level.INFO, "Instrument " + i + ": " + this.instruments.get(i).toString());
         }
         this.clefs = clefs;
         LOGGER.log(Level.INFO, "Clefs:");
-        for (Character c : clefs) {
-            LOGGER.log(Level.INFO, "" + c);
-        }
+        clefs.forEach(clef -> LOGGER.log(Level.INFO, "" + clef));
+
         this.clefsSteps = clefsSteps;
         LOGGER.log(Level.INFO, "Clefs steps:");
-        for (Integer i : clefsSteps) {
-            LOGGER.log(Level.INFO, "" + i);
-        }
+        clefsSteps.forEach(clefStep -> LOGGER.log(Level.INFO, "" + clefStep));
+
         this.accidentalMap = accidentalMap;
         LOGGER.log(Level.INFO, "Accidentals map: " + mapAsString(this.accidentalMap));
+
         this.pitchesMap = pitchesMap;
         LOGGER.log(Level.INFO, "Pitches map: " + mapAsString(this.pitchesMap));
+
         this.octavesNumber = octavesNumber;
         LOGGER.log(Level.INFO, "Octaves number: " + this.octavesNumber);
+
         this.metreInNumbers = metreInNumbers;
         LOGGER.log(Level.INFO, "Metre: " + metreInNumbers[0] + ":" + metreInNumbers[1]);
+
         this.measuresNumber = measuresNumber;
         LOGGER.log(Level.INFO, "Measures number: " + this.measuresNumber);
+
+        this.irregularGroupsMap = irregularGroupsMap;
+        LOGGER.log(Level.INFO, "Pitches map: " + mapAsString(this.irregularGroupsMap));
     }
 
     /**
@@ -174,8 +190,8 @@ public class Formatter {
 
     /**
      * <p>
-     * createLosContainer is the method that adds los container elements to
-     * the logic layer of the IEEE1599 document
+     * createLosContainer is the method that adds los container elements to the
+     * logic layer of the IEEE1599 document
      * </p>
      *
      * @param logic the element to be created and whose events are to be added
@@ -196,6 +212,15 @@ public class Formatter {
         }
     }
 
+    /**
+     * <p>
+     * createPartElement is the method that creates the part element
+     * </p>
+     *
+     * @param i the index of the instruments
+     * @param los the element whose child is to be appended
+     *
+     */
     private void createPartElement(int i, Element los) {
         Element part = addElementAndSetOneAttributeReturningTheElement(los, "part", "id", "Instrument_" + i);
 
@@ -206,7 +231,16 @@ public class Formatter {
         createMeasureElements(part, i);
     }
 
-    private void createMeasureElements(Element part, int i) throws NumberFormatException {
+    /**
+     * <p>
+     * createMeasureElements is the method that creates the measure elements
+     * </p>
+     *
+     * @param part the element whose child is to be appended
+     * @param i the index of the instruments
+     *
+     */
+    private void createMeasureElements(Element part, int i) {
         for (int j = 1; j <= measuresNumber; j++) {
             LOGGER.log(Level.INFO, "MEASURE" + j);
 
@@ -217,40 +251,52 @@ public class Formatter {
         }
     }
 
-    private void createVoiceElement(int i, Element measure, int j) throws NumberFormatException {
-        //LOGGER.log(Level.INFO, "Add voice element");
+    /**
+     * <p>
+     * createVoiceElement is the method that creates the voice elements
+     * </p>
+     *
+     * @param i the index of the instruments
+     * @param measure the element whose child is to be appended
+     * @param j the index of the measures
+     *
+     */
+    private void createVoiceElement(int i, Element measure, int j) {
+        LOGGER.log(Level.INFO, "Add voice element");
         Element voice = addElementAndSetOneAttributeReturningTheElement(measure, "voice", "voice_item_ref", "Instrument_" + (i + 1) + "_0_voice");
 
         String attributeString = "Instrument_" + (i + 1) + "_voice0_measure" + j + "_";
+        // number of events concerning the actual instrument in the actual measure
         int eventsNumber = (int) this.eventsList.stream().filter(e -> e.getAttribute("id").contains(attributeString)).count();
-        //LOGGER.log(Level.INFO, "Events number: {0}", eventsNumber);
+        LOGGER.log(Level.INFO, "Events number: " + eventsNumber);
 
-        int notesNumber = this.randomizer.getRandomInteger(1, instruments.get(i).getMaxNumberOfPlayedNotes());
-        //LOGGER.log(Level.INFO, "Notes number: {0}", notesNumber);
+        // random number of notes played by the actual instrument
+        int notesNumber = this.randomizer.getRandomInteger(1, this.instruments.get(i).getMaxNumberOfPlayedNotes());
+        LOGGER.log(Level.INFO, "Notes number: " + notesNumber);
 
         int notesNumberInAMeasure = computeNotesNumberInAMeasure(notesNumber, eventsNumber);
-        //LOGGER.log(Level.INFO, "Notes number in a measure: {0}", notesNumberInAMeasure);
+        LOGGER.log(Level.INFO, "Notes number in a measure: " + notesNumberInAMeasure);
 
         int restsNumberInAMeasure = eventsNumber - notesNumberInAMeasure;
-        //LOGGER.log(Level.INFO, "Rests number: {0}", restsNumberInAMeasure);
+        LOGGER.log(Level.INFO, "Rests number: " + restsNumberInAMeasure);
 
         List<Character> notesAndRests = createNotesAndRestsList(eventsNumber, notesNumberInAMeasure, restsNumberInAMeasure);
-
         this.randomizer.shuffleList(notesAndRests);
+        LOGGER.log(Level.INFO, "Notes and rests:");
+        notesAndRests.forEach(noteOrRest -> LOGGER.log(Level.INFO, "" + noteOrRest));
 
-        /*notesAndRests.forEach(c -> {
-        System.out.println(c);
-        });*/
-        List<Integer> randomPitches = this.randomizer.getRandomIntegers(notesAndRests.size(), instruments.get(i).getMinHeight(), instruments.get(i).getMaxHeight());
+        List<Integer> randomPitches = this.randomizer.getRandomIntegers(notesAndRests.size(), this.instruments.get(i).getMinHeight(), this.instruments.get(i).getMaxHeight());
+        LOGGER.log(Level.INFO, "Random pitches:");
+        randomPitches.forEach(randomPitch -> LOGGER.log(Level.INFO, "" + randomPitch));
 
-        int notesInAChord = this.randomizer.getRandomInteger(1, instruments.get(i).getMaxNumberOfNotesInAChord());
-        //LOGGER.log(Level.INFO, "Notes in a chord: {0}", notesInAChord);
+        // random number of notes in a chord
+        int notesInAChord = this.randomizer.getRandomInteger(1, this.instruments.get(i).getMaxNumberOfNotesInAChord());
+        LOGGER.log(Level.INFO, "Notes in a chord: " + notesInAChord);
 
-        /*randomPitches.forEach(p -> {
-            System.out.println(p);
-        });*/
-        List<Double> notesMapKeysList = new ArrayList<Double>(instruments.get(i).getNotesMap().keySet());
+        // list of notes represented as decimals
+        List<Double> notesMapKeysList = new ArrayList<Double>(this.instruments.get(i).getNotesMap().keySet());
 
+        // combinations with repetition of notes, in groups of notes and rests number, whose sum equals 1 and, therefore, it fills the measure
         List<Double> correctNotesAndRests = Generator
                 .combination(notesMapKeysList)
                 .multi(notesAndRests.size())
@@ -260,113 +306,198 @@ public class Formatter {
                 .orElse(new ArrayList<Double>());
 
         this.randomizer.shuffleList(correctNotesAndRests);
+        LOGGER.log(Level.INFO, "Correct notes and rests:");
+        correctNotesAndRests.forEach(correctNoteOrRest -> LOGGER.log(Level.INFO, "" + correctNoteOrRest));
 
         for (int k = 0; k < notesAndRests.size(); k++) {
 
             if (notesAndRests.get(k) == 'N') {
-                // LOGGER.log(Level.INFO, "Create chord elements");
+                LOGGER.log(Level.INFO, "Create chord elements");
                 createChordElements(i, j, k, voice, notesInAChord, correctNotesAndRests, randomPitches);
 
             } else {
-                //  LOGGER.log(Level.INFO, "Create rest elements");
+                LOGGER.log(Level.INFO, "Create rest elements");
                 createRestElements(i, j, k, voice, correctNotesAndRests);
             }
         }
     }
 
-    private void createRestElements(int i, int j, int k, Element voice, List<Double> correctNotesAndRests) throws NumberFormatException {
-
+    /**
+     * <p>
+     * createRestElements is the method that creates the rest elements
+     * </p>
+     *
+     * @param i the index of the instruments number
+     * @param j the index of the measures number
+     * @param k the index of the notes and rests number
+     * @param voice the element whose child is to be appended
+     * @param correctNotesAndRests the correct notes and rests list
+     *
+     * @throws NoSuchElementException if there is a configuration error
+     */
+    private void createRestElements(int i, int j, int k, Element voice, List<Double> correctNotesAndRests) {
         String eventRef = "Instrument_" + (i + 1) + "_voice0_measure" + j + "_ev" + k;
-        // TODO gestire caso EMPTY dell'optional
+
+        // there is only one event that corresponds to the actual instrument in the actual measure, so if everything has been correctly configured, the Optional can never be empty
         Optional<Element> optionalEvent = this.eventsList.stream().filter(e -> e.getAttribute("id").contains(eventRef)).findAny();
+        if (optionalEvent.isEmpty()) {
+            throw new NoSuchElementException("The event corresponding to the instrument " + (i + 1) + " in the measure " + j + " does not exist.");
+        }
         Element event = optionalEvent.get();
+        LOGGER.log(Level.INFO, "Event: " + event);
 
         if (!correctNotesAndRests.isEmpty()) {
-            Element rest = addElementToDocument(this.document, "rest");
+            LOGGER.log(Level.INFO, "Add rest element");
+            Element rest = addElementAndSetOneAttributeReturningTheElement(voice, "rest", "event_ref", eventRef);
 
-            setAttributeOfElement(rest, "event_ref", eventRef);
-            appendChildToElement(voice, rest);
-
-            // LOGGER.log(Level.INFO, "Get random note");
-            //double randomNote = this.randomizer.getRandomNote(instruments.get(i).getNotesMap());
             double randomNote = correctNotesAndRests.remove(0);
-            createDurationElement(i, randomNote, rest, k, event);
+            LOGGER.log(Level.INFO, "Random note: " + randomNote);
+
+            createRestDurationElement(i, randomNote, rest, k, event);
         } else {
+            LOGGER.log(Level.INFO, "Add duration element");
             Element duration = addElementToDocument(this.document, "duration");
             setAttributeOfElement(duration, "den", "");
             setAttributeOfElement(duration, "num", "");
 
+            LOGGER.log(Level.INFO, "Add event attributes of duration element");
             addEventAttributes(i, k, event, duration);
         }
     }
 
-    private void createDurationElement(int i, double randomNote, Element rest, int k, Element event) throws NumberFormatException {
+    /**
+     * <p>
+     * createRestDurationElement is the method that creates the duration element
+     * for the rest one
+     * </p>
+     *
+     * @param i the index of the instruments number
+     * @param randomNote the index of the notes and rests number
+     * @param rest the element whose child is to be appended
+     * @param k the index of notes and rests number
+     * @param event the element whose attributes are to be added
+     *
+     */
+    private void createRestDurationElement(int i, double randomNote, Element rest, int k, Element event) {
         if (randomNote == 1) {
+            LOGGER.log(Level.INFO, "Add duration element");
             Element duration = addElementAndSetTwoAttributesReturningTheElement(rest, "duration", "den", "" + metreInNumbers[1], "num", "" + metreInNumbers[0]);
+
+            LOGGER.log(Level.INFO, "Add event attributes of duration element");
             addEventAttributes(i, k, event, duration);
 
         } else {
+            LOGGER.log(Level.INFO, "Add duration element");
             Element duration = addElementAndSetTwoAttributesReturningTheElement(rest, "duration", "den", "" + this.instruments.get(i).getNotesMap().get(randomNote)[0], "num", "" + 1);
+
+            LOGGER.log(Level.INFO, "Add event attributes of duration element");
             addEventAttributes(i, k, event, duration);
         }
     }
 
-    private void createChordElements(int i, int j, int k, Element voice, int notesInAChord, List<Double> correctNotesAndRests, List<Integer> randomPitches) throws NumberFormatException {
+    /**
+     * <p>
+     * createChordElements is the method that creates the chord elements
+     * </p>
+     *
+     * @param i the index of the instruments number
+     * @param j the index of the measures number
+     * @param k the index of the notes and rests number
+     * @param voice the element whose child is to be appended
+     * @param notesInAChord the number of notes in a chord
+     * @param correctNotesAndRests the correct notes and rests list
+     * @param randomPitches the random pitches list
+     *
+     * @throws NoSuchElementException if there is a configuration error
+     */
+    private void createChordElements(int i, int j, int k, Element voice, int notesInAChord, List<Double> correctNotesAndRests, List<Integer> randomPitches) {
         String eventRef = "Instrument_" + (i + 1) + "_voice0_measure" + j + "_ev" + k;
 
-        // TODO gestire caso EMPTY dell'optional
+        // there is only one event that corresponds to the actual instrument in the actual measure, so if everything has been correctly configured, the Optional can never be empty
         Optional<Element> optionalEvent = this.eventsList.stream().filter(e -> e.getAttribute("id").contains(eventRef)).findAny();
+        if (optionalEvent.isEmpty()) {
+            throw new NoSuchElementException("The event corresponding to the instrument " + (i + 1) + " in the measure " + j + " does not exist.");
+        }
         Element event = optionalEvent.get();
+        LOGGER.log(Level.INFO, "Event: " + event);
 
         if (!correctNotesAndRests.isEmpty()) {
-            Element chord = addElementToDocument(this.document, "chord");
+            LOGGER.log(Level.INFO, "Add chord element");
+            Element chord = addElementAndSetOneAttributeReturningTheElement(voice, "chord", "event_ref", eventRef);
 
-            setAttributeOfElement(chord, "event_ref", eventRef);
-            appendChildToElement(voice, chord);
-
-            //double randomNote = this.randomizer.getRandomNote(instruments.get(i).getNotesMap());
             double randomNote = correctNotesAndRests.remove(0);
-            int irregularGroup = this.randomizer.getRandomIntFromMap(instruments.get(i).getIrregularGroupsMap());
+            LOGGER.log(Level.INFO, "Random note: " + randomNote);
 
-            createDurationElement(i, randomNote, chord, k, event, irregularGroup);
+            // random irregular group from the map
+            int irregularGroup = this.randomizer.getRandomIntFromMap(this.irregularGroupsMap);
+            LOGGER.log(Level.INFO, "Irregular group: " + irregularGroup);
+
+            createChordDurationElement(i, randomNote, chord, k, event, irregularGroup);
 
             createNoteheadElements(notesInAChord, chord, randomPitches, k);
         } else {
+            LOGGER.log(Level.INFO, "Add duration element");
             Element duration = addElementToDocument(this.document, "duration");
             setAttributeOfElement(duration, "den", "");
             setAttributeOfElement(duration, "num", "");
 
+            LOGGER.log(Level.INFO, "Add event attributes of duration element");
             addEventAttributes(i, k, event, duration);
         }
     }
 
+    /**
+     * <p>
+     * createNoteheadElements is the method that creates the notehead element
+     * </p>
+     *
+     * @param notesInAChord the number of notes in a chord
+     * @param chord the element whose child is to be appended
+     * @param randomPitches the random pitches list
+     * @param k the index of notes and rests number
+     *
+     */
     private void createNoteheadElements(int notesInAChord, Element chord, List<Integer> randomPitches, int k) {
-        for (int h = 1; h <= notesInAChord; h++) {
+        for (int n = 1; n <= notesInAChord; n++) {
+            LOGGER.log(Level.INFO, "Add notehead element");
             Element notehead = addElementAndReturnIt(chord, "notehead");
 
             addPitchElement(randomPitches, k, notehead);
         }
     }
 
-    private void createDurationElement(int i, double randomNote, Element chord, int k, Element event, int irregularGroup) throws NumberFormatException {
-        Element duration = addElementToDocument(this.document, "duration");
+    /**
+     * <p>
+     * createChordDurationElement is the method that creates the duration
+     * element for the chord one
+     * </p>
+     *
+     * @param i the index of the instruments number
+     * @param randomNote the index of the notes and rests number
+     * @param chord the element whose child is to be appended
+     * @param k the index of notes and rests number
+     * @param event the element whose attributes are to be added
+     * @param irregularGroup the random pitches list
+     *
+     */
+    private void createChordDurationElement(int i, double randomNote, Element chord, int k, Element event, int irregularGroup) {
         if (randomNote == 1) {
-            setAttributeOfElement(duration, "den", "" + metreInNumbers[1]);
-            setAttributeOfElement(duration, "num", "" + metreInNumbers[0]);
-            appendChildToElement(chord, duration);
+            LOGGER.log(Level.INFO, "Add duration element");
+            Element duration = addElementAndSetTwoAttributesReturningTheElement(chord, "duration", "den", "" + metreInNumbers[1], "num", "" + metreInNumbers[0]);
 
+            LOGGER.log(Level.INFO, "Add event attributes of duration element");
             addEventAttributes(i, k, event, duration);
 
-            additionForIrregularGroupsPresence(this.instruments.get(i).getAreIrregularGroupsPresent(), duration, "tuplet_ratio", "enter_num", "" + irregularGroup, "enter_den", "" + this.metreInNumbers[1] * this.instruments.get(i).getIrregularGroupsMap().get(irregularGroup), "in_num", "" + 1, "in_den", "" + this.metreInNumbers[1]);
+            additionForIrregularGroupsPresence(this.instruments.get(i).getAreIrregularGroupsPresent(), duration, "tuplet_ratio", "enter_num", "" + irregularGroup, "enter_den", "" + this.metreInNumbers[1] * this.irregularGroupsMap.get(irregularGroup), "in_num", "" + 1, "in_den", "" + this.metreInNumbers[1]);
 
         } else {
-            setAttributeOfElement(duration, "den", "" + instruments.get(i).getNotesMap().get(randomNote)[0]);
-            setAttributeOfElement(duration, "num", "" + 1);
-            appendChildToElement(chord, duration);
+            LOGGER.log(Level.INFO, "Add duration element");
+            Element duration = addElementAndSetTwoAttributesReturningTheElement(chord, "duration", "den", "" + instruments.get(i).getNotesMap().get(randomNote)[0], "num", "" + 1);
 
+            LOGGER.log(Level.INFO, "Add event attributes of duration element");
             addEventAttributes(i, k, event, duration);
 
-            additionForIrregularGroupsPresence(this.instruments.get(i).getAreIrregularGroupsPresent(), duration, "tuplet_ratio", "enter_num", "" + irregularGroup, "enter_den", "" + this.metreInNumbers[1] * this.instruments.get(i).getIrregularGroupsMap().get(irregularGroup), "in_num", "" + 1, "in_den", "" + this.instruments.get(i).getNotesMap().get(randomNote)[0]);
+            additionForIrregularGroupsPresence(this.instruments.get(i).getAreIrregularGroupsPresent(), duration, "tuplet_ratio", "enter_num", "" + irregularGroup, "enter_den", "" + this.metreInNumbers[1] * this.irregularGroupsMap.get(irregularGroup), "in_num", "" + 1, "in_den", "" + this.instruments.get(i).getNotesMap().get(randomNote)[0]);
         }
     }
 
@@ -382,7 +513,7 @@ public class Formatter {
      * @return the number of notes in a measure
      */
     private int computeNotesNumberInAMeasure(int notesNumber, int eventsNumber) {
-        int notesNumberInAMeasure = notesNumber / measuresNumber;
+        int notesNumberInAMeasure = notesNumber / this.measuresNumber;
         if (notesNumberInAMeasure > eventsNumber) {
             notesNumberInAMeasure = eventsNumber;
         }
@@ -524,6 +655,7 @@ public class Formatter {
     private void additionForIrregularGroupsPresence(boolean areIrregularGroupsPresent, Element element, String childName, String firstAttributeName, String firstAttributeValue, String secondAttributeName, String secondAttributeValue, String thirdAttributeName, String thirdAttributeValue, String fourthAttributeName, String fourthAttributeValue) {
 
         if (areIrregularGroupsPresent) {
+            LOGGER.log(Level.INFO, "Add irregular group elements");
             if (this.randomizer.getRandomBoolean()) {
                 addElementAndSetFourAttributes(element, childName, firstAttributeName, firstAttributeValue, secondAttributeName, secondAttributeValue, thirdAttributeName, thirdAttributeValue, fourthAttributeName, fourthAttributeValue);
 
@@ -559,6 +691,7 @@ public class Formatter {
 
         String randomAccidental = this.randomizer.getRandomStringFromMap(accidentalMap);
 
+        LOGGER.log(Level.INFO, "Add pitch element");
         Element pitch = addElementToDocument(this.document, "pitch");
         int randomOctave = this.randomizer.getRandomInteger(0, octavesNumber);
 
@@ -705,7 +838,7 @@ public class Formatter {
 
     /**
      * <p>
-     * addElementAndSetFourAttributes is the method that add a child element to
+     * addElementAndSetFourAttributes is the method that adds a child element to
      * the input element setting four attributes of the child element
      * </p>
      *
@@ -741,8 +874,8 @@ public class Formatter {
 
     /**
      * <p>
-     * addElementAndSetThreeAttributesReturningTheElement is the method that add
-     * a child element to the input element setting three attributes of the
+     * addElementAndSetThreeAttributesReturningTheElement is the method that
+     * adds a child element to the input element setting three attributes of the
      * child element
      * </p>
      *
@@ -776,7 +909,7 @@ public class Formatter {
 
     /**
      * <p>
-     * addElementAndSetTwoAttributes is the method that add a child element to
+     * addElementAndSetTwoAttributes is the method that adds a child element to
      * the input element setting two attributes of the child element
      * </p>
      *
@@ -803,8 +936,8 @@ public class Formatter {
 
     /**
      * <p>
-     * addElementAndSetTwoAttributesReturningTheElement is the method that add a
-     * child element to the input element setting two attributes of the child
+     * addElementAndSetTwoAttributesReturningTheElement is the method that adds
+     * a child element to the input element setting two attributes of the child
      * element
      * </p>
      *
@@ -834,7 +967,7 @@ public class Formatter {
 
     /**
      * <p>
-     * addElementAndSetOneAttributeReturningTheElement is the method that add a
+     * addElementAndSetOneAttributeReturningTheElement is the method that adds a
      * child element to the input element setting an attribute of the child
      * element
      * </p>
@@ -858,8 +991,8 @@ public class Formatter {
 
     /**
      * <p>
-     * addElementAndSetTextContext is the method that add a child element to the
-     * input element setting the text content of the child element
+     * addElementAndSetTextContext is the method that adds a child element to
+     * the input element setting the text content of the child element
      * </p>
      *
      * @param element the element whose child is to be appended
@@ -876,7 +1009,7 @@ public class Formatter {
 
     /**
      * <p>
-     * addElementì is the method that add a child element to the input element
+     * addElement is the method that adds a child element to the input element
      * </p>
      *
      * @param element the element whose child is to be appended
@@ -891,8 +1024,8 @@ public class Formatter {
 
     /**
      * <p>
-     * addElementAndReturnIt is the method that add a child element to the input
-     * element and returns it
+     * addElementAndReturnIt is the method that adds a child element to the
+     * input element and returns it
      * </p>
      *
      * @param element the element whose child is to be appended
@@ -910,7 +1043,7 @@ public class Formatter {
 
     /**
      * <p>
-     * addIeee1599Element is the method that add the IEEE1599 element of the
+     * addIeee1599Element is the method that adds the IEEE1599 element of the
      * general layer to the IEEE1599 document
      * </p>
      *
@@ -950,7 +1083,7 @@ public class Formatter {
 
     /**
      * <p>
-     * addElementToDocument is the method that add an element to the IEEE1599
+     * addElementToDocument is the method that adds an element to the IEEE1599
      * document
      * </p>
      *
@@ -966,7 +1099,7 @@ public class Formatter {
 
     /**
      * <p>
-     * appendChildToElement is the method that append a child to and element of
+     * appendChildToElement is the method that appends a child to and element of
      * the IEEE1599 document
      * </p>
      *
@@ -980,7 +1113,7 @@ public class Formatter {
 
     /**
      * <p>
-     * setAttributeOfElement is the method that set an attribute of an element
+     * setAttributeOfElement is the method that sets an attribute of an element
      * of the IEEE1599 document
      * </p>
      *
@@ -994,7 +1127,7 @@ public class Formatter {
 
     /**
      * <p>
-     * setTextContentOfElement is the method that set the text content of an
+     * setTextContentOfElement is the method that sets the text content of an
      * element of the IEEE1599 document
      * </p>
      *
