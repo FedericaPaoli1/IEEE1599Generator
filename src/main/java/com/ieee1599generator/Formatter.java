@@ -134,67 +134,92 @@ public class Formatter {
         LOGGER.log(Level.INFO, "Measures number: " + this.measuresNumber);
     }
 
-    public void format() {
+    /**
+     * <p>
+     * format is the method that formats the IEEE1599 document
+     * </p>
+     *
+     * @throws ParserConfigurationException if there is a configuration error
+     * for the DocumentBuilderFactory class
+     */
+    public void format() throws ParserConfigurationException {
 
-        //LOGGER.log(Level.INFO, "Create document");
+        LOGGER.log(Level.INFO, "Create document");
         createDocument();
 
-        //LOGGER.log(Level.INFO, "Create general layer");
+        LOGGER.log(Level.INFO, "Create general layer");
         Element ieee1599 = createGeneralLayer();
 
-        //LOGGER.log(Level.INFO, "Create logic layer");
+        LOGGER.log(Level.INFO, "Create logic layer");
         createLogicLayer(ieee1599);
     }
 
-    private void createLogicLayer(Element ieee1599) throws NumberFormatException {
-        Element logic = addLogicElement(ieee1599);
+    /**
+     * <p>
+     * createLogicLayer is the method that add logic layer elements to the
+     * IEEE1599 document
+     * </p>
+     *
+     * @param ieee1599 the element whose logic layer is to be added
+     */
+    private void createLogicLayer(Element ieee1599) {
+        Element logic = addElementAndReturnIt(ieee1599, "logic");
 
-        //LOGGER.log(Level.INFO, "Create spine container");
+        LOGGER.log(Level.INFO, "Create spine container");
         createSpineContainer(logic);
 
-        //LOGGER.log(Level.INFO, "Create los container");
+        LOGGER.log(Level.INFO, "Create los container");
         createLosContainer(logic);
     }
 
-    private void createLosContainer(Element logic) throws NumberFormatException {
-        Element los = addLosElement(logic);
+    /**
+     * <p>
+     * createLosContainer is the method that adds los container elements to
+     * the logic layer of the IEEE1599 document
+     * </p>
+     *
+     * @param logic the element to be created and whose events are to be added
+     * as attributes
+     */
+    private void createLosContainer(Element logic) {
+        Element los = addElementAndReturnIt(logic, "los");
 
-        Element staffList = addStaffListElement(los);
+        Element staffList = addElementAndReturnIt(los, "staff_list");
 
         for (int i = 0; i < instrumentsNumber; i++) {
-            //LOGGER.log(Level.INFO, "INSTRUMENT {0}", i);
+            LOGGER.log(Level.INFO, "INSTRUMENT" + i);
 
             addStaffListComponents(i, staffList);
 
-            //LOGGER.log(Level.INFO, "Create part element");
+            LOGGER.log(Level.INFO, "Create part element");
             createPartElement(i, los);
         }
     }
 
-    private void createPartElement(int i, Element los) throws NumberFormatException {
-        Element part = addPartElement(i, los);
+    private void createPartElement(int i, Element los) {
+        Element part = addElementAndSetOneAttributeReturningTheElement(los, "part", "id", "Instrument_" + i);
 
-        //LOGGER.log(Level.INFO, "Create voice list container");
+        LOGGER.log(Level.INFO, "Create voice list container");
         createVoiceListContainer(part, i);
 
-        //LOGGER.log(Level.INFO, "Create measure elements");
+        LOGGER.log(Level.INFO, "Create measure elements");
         createMeasureElements(part, i);
     }
 
     private void createMeasureElements(Element part, int i) throws NumberFormatException {
         for (int j = 1; j <= measuresNumber; j++) {
-            //LOGGER.log(Level.INFO, "MEASURE {0}", j);
+            LOGGER.log(Level.INFO, "MEASURE" + j);
 
-            Element measure = addMeasureElement(j, part);
+            Element measure = addElementAndSetOneAttributeReturningTheElement(part, "measure", "number", "" + j);
 
-            //LOGGER.log(Level.INFO, "Create voice element");
+            LOGGER.log(Level.INFO, "Create voice element");
             createVoiceElement(i, measure, j);
         }
     }
 
     private void createVoiceElement(int i, Element measure, int j) throws NumberFormatException {
         //LOGGER.log(Level.INFO, "Add voice element");
-        Element voice = addVoiceElement(i, measure);
+        Element voice = addElementAndSetOneAttributeReturningTheElement(measure, "voice", "voice_item_ref", "Instrument_" + (i + 1) + "_0_voice");
 
         String attributeString = "Instrument_" + (i + 1) + "_voice0_measure" + j + "_";
         int eventsNumber = (int) this.eventsList.stream().filter(e -> e.getAttribute("id").contains(attributeString)).count();
@@ -211,7 +236,6 @@ public class Formatter {
 
         List<Character> notesAndRests = createNotesAndRestsList(eventsNumber, notesNumberInAMeasure, restsNumberInAMeasure);
 
-        //Collections.shuffle(notesAndRests);
         this.randomizer.shuffleList(notesAndRests);
 
         /*notesAndRests.forEach(c -> {
@@ -235,7 +259,6 @@ public class Formatter {
                 .findFirst()
                 .orElse(new ArrayList<Double>());
 
-        //Collections.shuffle(correctNotesAndRests);
         this.randomizer.shuffleList(correctNotesAndRests);
 
         for (int k = 0; k < notesAndRests.size(); k++) {
@@ -279,11 +302,11 @@ public class Formatter {
 
     private void createDurationElement(int i, double randomNote, Element rest, int k, Element event) throws NumberFormatException {
         if (randomNote == 1) {
-            Element duration = addDurationElement(rest);
+            Element duration = addElementAndSetTwoAttributesReturningTheElement(rest, "duration", "den", "" + metreInNumbers[1], "num", "" + metreInNumbers[0]);
             addEventAttributes(i, k, event, duration);
 
         } else {
-            Element duration = addDurationElement(instruments.get(i).getNotesMap(), randomNote, rest);
+            Element duration = addElementAndSetTwoAttributesReturningTheElement(rest, "duration", "den", "" + this.instruments.get(i).getNotesMap().get(randomNote)[0], "num", "" + 1);
             addEventAttributes(i, k, event, duration);
         }
     }
@@ -319,7 +342,7 @@ public class Formatter {
 
     private void createNoteheadElements(int notesInAChord, Element chord, List<Integer> randomPitches, int k) {
         for (int h = 1; h <= notesInAChord; h++) {
-            Element notehead = addNoteheadElement(chord);
+            Element notehead = addElementAndReturnIt(chord, "notehead");
 
             addPitchElement(randomPitches, k, notehead);
         }
@@ -334,7 +357,7 @@ public class Formatter {
 
             addEventAttributes(i, k, event, duration);
 
-            additionForIrregularGroupsPresence(i, irregularGroup, duration);
+            additionForIrregularGroupsPresence(this.instruments.get(i).getAreIrregularGroupsPresent(), duration, "tuplet_ratio", "enter_num", "" + irregularGroup, "enter_den", "" + this.metreInNumbers[1] * this.instruments.get(i).getIrregularGroupsMap().get(irregularGroup), "in_num", "" + 1, "in_den", "" + this.metreInNumbers[1]);
 
         } else {
             setAttributeOfElement(duration, "den", "" + instruments.get(i).getNotesMap().get(randomNote)[0]);
@@ -343,10 +366,21 @@ public class Formatter {
 
             addEventAttributes(i, k, event, duration);
 
-            additionForIrregularGroupsPresence(i, irregularGroup, randomNote, duration);
+            additionForIrregularGroupsPresence(this.instruments.get(i).getAreIrregularGroupsPresent(), duration, "tuplet_ratio", "enter_num", "" + irregularGroup, "enter_den", "" + this.metreInNumbers[1] * this.instruments.get(i).getIrregularGroupsMap().get(irregularGroup), "in_num", "" + 1, "in_den", "" + this.instruments.get(i).getNotesMap().get(randomNote)[0]);
         }
     }
 
+    /**
+     * <p>
+     * computeNotesNumberInAMeasure is the method that computes the total number
+     * of notes in a measure
+     * </p>
+     *
+     * @param notesNumber the total number of notes
+     * @param eventsNumber the total number of events
+     *
+     * @return the number of notes in a measure
+     */
     private int computeNotesNumberInAMeasure(int notesNumber, int eventsNumber) {
         int notesNumberInAMeasure = notesNumber / measuresNumber;
         if (notesNumberInAMeasure > eventsNumber) {
@@ -355,78 +389,161 @@ public class Formatter {
         return notesNumberInAMeasure;
     }
 
+    /**
+     * <p>
+     * createVoiceListContainer is the method that creates the voice_list
+     * container
+     * </p>
+     *
+     * @param part the element whose voice_list container is to be appended
+     * @param i the index of the instruments
+     *
+     */
     private void createVoiceListContainer(Element part, int i) {
-        Element voiceList = addVoiceListElement(part);
+        Element voiceList = addElementAndReturnIt(part, "voice_list");
 
-        addVoiceItemElement(i, voiceList);
+        addElementAndSetTwoAttributes(voiceList, "voice_item", "id", "Instrument_" + (i + 1) + "_0_voice", "staff_ref", "Instrument_" + (i + 1) + "_staff");
     }
 
+    /**
+     * <p>
+     * createNotesAndRestsList is the method that creates a unique list of notes
+     * and rests
+     * </p>
+     *
+     * @param eventsNumber the total number of events
+     * @param notesNumberInAMeasure the total number of notes
+     * @param restsNumberInAMeasure the total number of rests
+     *
+     * @return the list of characters containing notes (denoted with 'N') and
+     * rests (denoted with 'R')
+     */
     private List<Character> createNotesAndRestsList(int eventsNumber, int notesNumberInAMeasure, int restsNumberInAMeasure) {
         List<Character> notesAndRests = new ArrayList<>();
-        int count = 0;
-        while (count < eventsNumber) {
-            for (int n = 1; n <= notesNumberInAMeasure; n++) {
+        int countNotes = 1, countRests = 1;
+        for (int e = 0; e < eventsNumber; e++) {
+            while (countNotes < notesNumberInAMeasure) {
                 notesAndRests.add('N');
-                count++;
+                countNotes++;
             }
-            for (int r = 1; r <= restsNumberInAMeasure; r++) {
+            while (countRests < restsNumberInAMeasure) {
                 notesAndRests.add('R');
-                count++;
+                countRests++;
             }
         }
         return notesAndRests;
     }
 
+    /**
+     * <p>
+     * addStaffListComponents is the method that adds staff_list components
+     * </p>
+     *
+     * @param i the index of the instruments
+     * @param staffList the element whose components are to be added
+     *
+     */
     private void addStaffListComponents(int i, Element staffList) {
-        Element staff = addStaffElement(i, staffList);
+        Element staff = addElementAndSetTwoAttributesReturningTheElement(staffList, "staff", "id", "Instrument_" + (i + 1) + "_staff", "line_number", "" + 5);
 
-        Element timeSignature = addTimeSignatureElement(i, staff);
+        Element timeSignature = addElementAndSetOneAttributeReturningTheElement(staff, "time_signature", "event_ref", "TimeSignature_Instrument_" + (i + 1) + "_1");
 
-        addTimeIndicationElement(timeSignature);
+        addElementAndSetTwoAttributes(timeSignature, "time_indication", "den", "" + this.metreInNumbers[1], "num", "" + this.metreInNumbers[0]);
 
-        addClefElement(i, staff);
+        addElementAndSetFourAttributes(staff, "clef", "event_ref", "Clef_Instrument_" + (i + 1) + "_1", "shape", "" + this.randomizer.getRandomElementFromList(this.clefs), "staff_step", "" + this.randomizer.getRandomElementFromList(this.clefsSteps), "octave_num", "" + 0);
+
     }
 
+    /**
+     * <p>
+     * createSpineContainer is the method that adds spine container elements to
+     * the logic layer of the IEEE1599 document
+     * </p>
+     *
+     * @param logic the element to be created and whose events are to be added
+     * as attributes
+     */
     private void createSpineContainer(Element logic) {
-        Element spine = addSpineElement(logic);
+        Element spine = addElementAndReturnIt(logic, "spine");
 
-        defineFirstEvents("Instrument_", "_voice0_measure1_ev0", spine);
-        defineFirstEvents("TimeSignature_Instrument_", "_1", spine);
-        defineFirstEvents("Clef_Instrument_", "_1", spine);
+        defineFirstEvents(spine, "Instrument_", "_voice0_measure1_ev0");
+        defineFirstEvents(spine, "TimeSignature_Instrument_", "_1");
+        defineFirstEvents(spine, "Clef_Instrument_", "_1");
 
         createEvents(spine);
     }
 
-    private Element createGeneralLayer() throws DOMException {
-        Element ieee1599 = addIeee1599Element(creator, docVersion);
-        Element general = addGeneralElement(ieee1599);
-        Element description = addDescriptionElement(general);
-        addMainTitleElement(description);
-        addAuthorElement(description);
+    /**
+     * <p>
+     * createGeneralLayer is the method that adds general layer elements to the
+     * IEEE1599 document
+     * </p>
+     *
+     * @return the first Element of the General layer
+     */
+    private Element createGeneralLayer() {
+        Element ieee1599 = addIeee1599Element(this.creator, this.docVersion);
+
+        Element general = addElementAndReturnIt(ieee1599, "general");
+
+        Element description = addElementAndReturnIt(general, "description");
+
+        addElementAndSetTextContext(description, "main_title", this.title);
+        addElementAndSetTextContext(description, "author", this.author);
+
         return ieee1599;
     }
 
-    public Document getDocument() {
-        return this.document;
-    }
+    /**
+     * <p>
+     * additionForIrregularGroupsPresence is the method that adds the irregular
+     * groups element
+     * </p>
+     *
+     * @param areIrregularGroupsPresent the boolean that indicates the presence
+     * or absece of the irregular groups
+     * @param element the element whose child is to be appended
+     * @param childName the string constituting the name of the child
+     * @param firstAttributeName the string constituting the first attribute
+     * name
+     * @param firstAttributeValue the string constituting the first attribute
+     * value
+     * @param secondAttributeName the string constituting the second attribute
+     * name
+     * @param secondAttributeValue the string constituting the second attribute
+     * @param thirdAttributeName the string constituting the third attribute
+     * name
+     * @param thirdAttributeValue the string constituting the third attribute
+     * value
+     * @param fourthAttributeName the string constituting the fourth attribute
+     * name
+     * @param fourthAttributeValue the string constituting the fourth attribute
+     * value
+     *
+     */
+    private void additionForIrregularGroupsPresence(boolean areIrregularGroupsPresent, Element element, String childName, String firstAttributeName, String firstAttributeValue, String secondAttributeName, String secondAttributeValue, String thirdAttributeName, String thirdAttributeValue, String fourthAttributeName, String fourthAttributeValue) {
 
-    private void additionForIrregularGroupsPresence(int i, int irregularGroup, double randomNote, Element duration) {
-        if (this.instruments.get(i).getAreIrregularGroupsPresent()) {
+        if (areIrregularGroupsPresent) {
             if (this.randomizer.getRandomBoolean()) {
-                addTupletRatioElement(irregularGroup, instruments.get(i).getIrregularGroupsMap(), instruments.get(i).getNotesMap(), randomNote, duration);
+                addElementAndSetFourAttributes(element, childName, firstAttributeName, firstAttributeValue, secondAttributeName, secondAttributeValue, thirdAttributeName, thirdAttributeValue, fourthAttributeName, fourthAttributeValue);
+
             }
         }
     }
 
-    private void additionForIrregularGroupsPresence(int i, int irregularGroup, Element duration) {
-        if (this.instruments.get(i).getAreIrregularGroupsPresent()) {
-            if (this.randomizer.getRandomBoolean()) {
-                addTupletRatioElement(irregularGroup, instruments.get(i).getIrregularGroupsMap(), duration);
-            }
-        }
-    }
-
-    private void addEventAttributes(int i, int k, Element event, Element duration) throws NumberFormatException {
+    /**
+     * <p>
+     * addEventAttributes is the method that adds attributes of an event
+     * </p>
+     *
+     * @param i the index i of the instruments
+     * @param k the index k of the notes and rests
+     * @param event the element whose attributes are to be added
+     * @param duration the element to use to control the presence or absence of
+     * the attribute "den" to assign the corresponding "timing" and "hpos"
+     *
+     */
+    private void addEventAttributes(int i, int k, Element event, Element duration) {
         if (k > 0 && duration.getAttribute("den") != "") {
             setAttributeOfElement(event, "timing", "" + this.instruments.get(i).getMinimumDelay() * (instruments.get(i).getMinDuration()[0] / Integer.parseInt(duration.getAttribute("den"))));
             setAttributeOfElement(event, "hpos", "" + this.instruments.get(i).getMinimumDelay() * (instruments.get(i).getMinDuration()[0] / Integer.parseInt(duration.getAttribute("den"))));
@@ -436,32 +553,7 @@ public class Formatter {
         }
     }
 
-    private Element addDurationElement(Map<Double, int[]> notesMap, double randomNote, Element rest) {
-        Element duration = addElementToDocument(this.document, "duration");
-        setAttributeOfElement(duration, "den", "" + notesMap.get(randomNote)[0]);
-        setAttributeOfElement(duration, "num", "" + 1);
-        appendChildToElement(rest, duration);
-        return duration;
-    }
-
-    private Element addDurationElement(Element rest) {
-        Element duration = addElementToDocument(this.document, "duration");
-        setAttributeOfElement(duration, "den", "" + metreInNumbers[1]);
-        setAttributeOfElement(duration, "num", "" + metreInNumbers[0]);
-        appendChildToElement(rest, duration);
-        return duration;
-    }
-
-    private void addAccidentalElement(String accidentalType, Element notehead) {
-        Element accidental = addElementToDocument(this.document, accidentalType);
-        appendChildToElement(notehead, accidental);
-    }
-
-    private void addPrintedAccidentalsElement(Element notehead) {
-        Element printedAccidentals = addElementToDocument(this.document, "printed_accidentals");
-        appendChildToElement(notehead, printedAccidentals);
-    }
-
+    // da riscrivere
     private void addPitchElement(List<Integer> randomPitches, int k, Element notehead) {
         char randomPitch = pitchesMap.get(randomPitches.get(k));
 
@@ -494,9 +586,9 @@ public class Formatter {
 
                     appendChildToElement(notehead, pitch);
 
-                    addPrintedAccidentalsElement(notehead);
+                    addElement(notehead, "printed_accidentals");
 
-                    addAccidentalElement(randomAccidental, notehead);
+                    addElement(notehead, randomAccidental);
                 } else {
                     randomPitch = pitchesMap.get(newPitchIndex - 1);
 
@@ -506,9 +598,9 @@ public class Formatter {
 
                     appendChildToElement(notehead, pitch);
 
-                    addPrintedAccidentalsElement(notehead);
+                    addElement(notehead, "printed_accidentals");
 
-                    addAccidentalElement(randomAccidental, notehead);
+                    addElement(notehead, randomAccidental);
                 }
             } else {
                 setAttributeOfElement(pitch, "actual_accidental", "" + randomAccidental);
@@ -517,9 +609,9 @@ public class Formatter {
 
                 appendChildToElement(notehead, pitch);
 
-                addPrintedAccidentalsElement(notehead);
+                addElement(notehead, "printed_accidentals");
 
-                addAccidentalElement(randomAccidental, notehead);
+                addElement(notehead, randomAccidental);
 
             }
 
@@ -534,215 +626,381 @@ public class Formatter {
 
     }
 
-    private Element addNoteheadElement(Element chord) {
-        Element notehead = addElementToDocument(this.document, "notehead");
-        appendChildToElement(chord, notehead);
-        return notehead;
-    }
-
-    private void addTupletRatioElement(int irregularGroup, Map<Integer, Integer> irregularGroupsMap, Map<Double, int[]> notesMap, double randomNote, Element duration) {
-        Element tupletRatio = addElementToDocument(this.document, "tuplet_ratio");
-        setAttributeOfElement(tupletRatio, "enter_num", "" + irregularGroup);
-        setAttributeOfElement(tupletRatio, "enter_den", "" + metreInNumbers[1] * irregularGroupsMap.get(irregularGroup));
-        setAttributeOfElement(tupletRatio, "in_num", "" + 1);
-        setAttributeOfElement(tupletRatio, "in_den", "" + notesMap.get(randomNote)[0]);
-        appendChildToElement(duration, tupletRatio);
-    }
-
-    private void addTupletRatioElement(int irregularGroup, Map<Integer, Integer> irregularGroupsMap, Element duration) {
-        Element tupletRatio = addElementToDocument(this.document, "tuplet_ratio");
-        setAttributeOfElement(tupletRatio, "enter_num", "" + irregularGroup);
-        setAttributeOfElement(tupletRatio, "enter_den", "" + metreInNumbers[1] * irregularGroupsMap.get(irregularGroup));
-        setAttributeOfElement(tupletRatio, "in_num", "" + 1);
-        setAttributeOfElement(tupletRatio, "in_den", "" + metreInNumbers[1]);
-        appendChildToElement(duration, tupletRatio);
-    }
-
-    private Element addVoiceElement(int i, Element measure) {
-        Element voice = addElementToDocument(this.document, "voice");
-        setAttributeOfElement(voice, "voice_item_ref", "Instrument_" + (i + 1) + "_0_voice");
-        appendChildToElement(measure, voice);
-        return voice;
-    }
-
-    private Element addMeasureElement(int j, Element part) {
-        Element measure = addElementToDocument(this.document, "measure");
-        setAttributeOfElement(measure, "number", "" + j);
-        appendChildToElement(part, measure);
-        return measure;
-    }
-
-    private void addVoiceItemElement(int i, Element voiceList) {
-        Element voiceItem = addElementToDocument(this.document, "voice_item");
-        setAttributeOfElement(voiceItem, "id", "Instrument_" + (i + 1) + "_0_voice");
-        setAttributeOfElement(voiceItem, "staff_ref", "Instrument_" + (i + 1) + "_staff");
-        appendChildToElement(voiceList, voiceItem);
-    }
-
-    private Element addVoiceListElement(Element part) {
-        Element voiceList = addElementToDocument(this.document, "voice_list");
-        appendChildToElement(part, voiceList);
-        return voiceList;
-    }
-
-    private Element addPartElement(int i, Element los) {
-        Element part = addElementToDocument(this.document, "part");
-        setAttributeOfElement(part, "id", "Instrument_" + i);
-        appendChildToElement(los, part);
-        return part;
-    }
-
-    private void addClefElement(int i, Element staff) {
-        Element clef = addElementToDocument(this.document, "clef");
-        setAttributeOfElement(clef, "event_ref", "Clef_Instrument_" + (i + 1) + "_1");
-        setAttributeOfElement(clef, "shape", "" + this.randomizer.getRandomElementFromList(clefs));
-        setAttributeOfElement(clef, "staff_step", "" + this.randomizer.getRandomElementFromList(clefsSteps));
-        setAttributeOfElement(clef, "octave_num", "" + 0);
-        appendChildToElement(staff, clef);
-    }
-
-    private void addTimeIndicationElement(Element timeSignature) {
-        Element timeIndication = addElementToDocument(this.document, "time_indication");
-        setAttributeOfElement(timeIndication, "den", "" + metreInNumbers[1]);
-        setAttributeOfElement(timeIndication, "num", "" + metreInNumbers[0]);
-        appendChildToElement(timeSignature, timeIndication);
-    }
-
-    private Element addTimeSignatureElement(int i, Element staff) {
-        Element timeSignature = addElementToDocument(this.document, "time_signature");
-        setAttributeOfElement(timeSignature, "event_ref", "TimeSignature_Instrument_" + (i + 1) + "_1");
-        appendChildToElement(staff, timeSignature);
-        return timeSignature;
-    }
-
-    private Element addStaffElement(int i, Element staffList) {
-        Element staff = addElementToDocument(this.document, "staff");
-        setAttributeOfElement(staff, "id", "Instrument_" + (i + 1) + "_staff");
-        setAttributeOfElement(staff, "line_number", "" + 5);
-        appendChildToElement(staffList, staff);
-        return staff;
-    }
-
-    private Element addStaffListElement(Element los) {
-        Element staffList = addElementToDocument(this.document, "staff_list");
-        appendChildToElement(los, staffList);
-        return staffList;
-    }
-
-    private Element addLosElement(Element logic) {
-        Element los = addElementToDocument(this.document, "los");
-        appendChildToElement(logic, los);
-        return los;
-    }
-
-    private Element addSpineElement(Element logic) {
-        Element spine = addElementToDocument(this.document, "spine");
-        appendChildToElement(logic, spine);
-        return spine;
-    }
-
-    private Element addLogicElement(Element ieee1599) {
-        Element logic = addElementToDocument(this.document, "logic");
-        appendChildToElement(ieee1599, logic);
-        return logic;
-    }
-
-    private void addAuthorElement(Element description) {
-        Element author = addElementToDocument(this.document, "author");
-        setTextContentOfElement(author, this.author);
-        appendChildToElement(description, author);
-    }
-
-    private void addMainTitleElement(Element description) {
-        Element mainTitle = addElementToDocument(this.document, "main_title");
-        setTextContentOfElement(mainTitle, title);
-        appendChildToElement(description, mainTitle);
-    }
-
-    private Element addDescriptionElement(Element general) {
-        Element description = addElementToDocument(this.document, "description");
-        appendChildToElement(general, description);
-        return description;
-    }
-
-    private Element addGeneralElement(Element ieee1599) {
-        Element general = addElementToDocument(this.document, "general");
-        appendChildToElement(ieee1599, general);
-        return general;
-    }
-
-    private Element addIeee1599Element(String creator, double version) throws DOMException {
-        Element ieee1599 = addElementToDocument(this.document, "ieee1599");
-        setAttributeOfElement(ieee1599, "creator", creator);
-        setAttributeOfElement(ieee1599, "version", "" + version);
-        this.document.appendChild(ieee1599);
-        return ieee1599;
-    }
-
+    /**
+     * <p>
+     * createEvents is the method that creates the events for each random
+     * instrument
+     * </p>
+     *
+     * @param spine the element whose children are to be appended
+     *
+     */
     private void createEvents(Element spine) {
         for (int j = 1; j <= measuresNumber; j++) {
+
             List<Integer> randomInstruments = this.randomizer.getRandomNonRepeatingIntegers(instrumentsNumber, 1, instrumentsNumber);
+
             if (this.areFirstEventsDefined) {
-                for (int i = 0; i < randomInstruments.size(); i++) {
-                    int eventsNumber = this.randomizer.getRandomInteger(1, instruments.get(i).getMaxNumberOfEvents());
-                    for (int k = 1; k < eventsNumber; k++) {
-                        defineOtherEvents(i, j, k, randomInstruments, spine);
-                    }
-                }
+
+                defineOtherEvents(1, j, randomInstruments, spine);
+
                 this.areFirstEventsDefined = false;
+
             } else {
-                for (int i = 0; i < randomInstruments.size(); i++) {
-                    int eventsNumber = this.randomizer.getRandomInteger(1, instruments.get(i).getMaxNumberOfEvents());
-                    for (int k = 0; k < eventsNumber; k++) {
-                        defineOtherEvents(i, j, k, randomInstruments, spine);
-                    }
-                }
+
+                defineOtherEvents(0, j, randomInstruments, spine);
             }
         }
     }
 
-    private void defineOtherEvents(int i, int j, int k, List<Integer> randomInstruments, Element spine) {
-        Element event = addElementToDocument(this.document, "event");
-        setAttributeOfElement(event, "id", "Instrument_" + randomInstruments.get(i) + "_voice0_measure" + j + "_ev" + k);
-        appendChildToElement(spine, event);
-        this.eventsList.add(event);
+    /**
+     * <p>
+     * defineOtherEvents is the method that defines the other events of the
+     * IEEE1599 document
+     * </p>
+     *
+     * @param kIndex the number to give to index k
+     * @param j the index j of the number of measures
+     * @param randomInstruments the list of random instruments
+     * @param spine the element whose child is to be appended
+     *
+     */
+    private void defineOtherEvents(int kIndex, int j, List<Integer> randomInstruments, Element spine) {
+        for (int i = 0; i < randomInstruments.size(); i++) {
+
+            int eventsNumber = this.randomizer.getRandomInteger(1, instruments.get(i).getMaxNumberOfEvents());
+
+            for (int k = kIndex; k < eventsNumber; k++) {
+
+                Element event = addElementAndSetOneAttributeReturningTheElement(spine, "event", "id", "Instrument_" + randomInstruments.get(i) + "_voice0_measure" + j + "_ev" + k);
+
+                this.eventsList.add(event);
+            }
+        }
     }
 
-    private void defineFirstEvents(String firstPart, String secondPart, Element spine) {
+    /**
+     * <p>
+     * defineFirstEvents is the method that defines the first events of the
+     * IEEE1599 document
+     * </p>
+     *
+     * @param spine the element whose child is to be appended
+     * @param firstPartOfTheFirstAttributeValue the string constituting the
+     * first part of the first attribute value
+     * @param secondPartOfTheFirstAttributeValue the string constituting the
+     * second part of the first attribute value
+     *
+     */
+    private void defineFirstEvents(Element spine, String firstPartOfTheFirstAttributeValue, String secondPartOfTheFirstAttributeValue) {
         for (int i = 1; i <= instrumentsNumber; i++) {
-            Element event = addElementToDocument(this.document, "event");
-            setAttributeOfElement(event, "id", firstPart + i + secondPart);
-            setAttributeOfElement(event, "timing", "" + 0);
-            setAttributeOfElement(event, "hpos", "" + 0);
-            appendChildToElement(spine, event);
+
+            Element event = addElementAndSetThreeAttributesReturningTheElement(spine, "event", "id", firstPartOfTheFirstAttributeValue + i + secondPartOfTheFirstAttributeValue, "timing", "" + 0, "hpos", "" + 0);
+
             this.eventsList.add(event);
+
             this.areFirstEventsDefined = true;
         }
     }
 
-    private void createDocument() {
+    /**
+     * <p>
+     * addElementAndSetFourAttributes is the method that add a child element to
+     * the input element setting four attributes of the child element
+     * </p>
+     *
+     * @param element the element whose child is to be appended
+     * @param childName the string constituting the name of the child
+     * @param firstAttributeName the string constituting the first attribute
+     * name
+     * @param firstAttributeValue the string constituting the first attribute
+     * value
+     * @param secondAttributeName the string constituting the second attribute
+     * name
+     * @param secondAttributeValue the string constituting the second attribute
+     * @param thirdAttributeName the string constituting the third attribute
+     * name
+     * @param thirdAttributeValue the string constituting the third attribute
+     * value
+     * @param fourthAttributeName the string constituting the fourth attribute
+     * name
+     * @param fourthAttributeValue the string constituting the fourth attribute
+     * value
+     *
+     */
+    private void addElementAndSetFourAttributes(Element element, String childName, String firstAttributeName, String firstAttributeValue, String secondAttributeName, String secondAttributeValue, String thirdAttributeName, String thirdAttributeValue, String fourthAttributeName, String fourthAttributeValue) {
+        Element child = addElementToDocument(this.document, childName);
+
+        setAttributeOfElement(child, firstAttributeName, firstAttributeValue);
+        setAttributeOfElement(child, secondAttributeName, secondAttributeValue);
+        setAttributeOfElement(child, thirdAttributeName, thirdAttributeValue);
+        setAttributeOfElement(child, fourthAttributeName, fourthAttributeValue);
+
+        appendChildToElement(element, child);
+    }
+
+    /**
+     * <p>
+     * addElementAndSetThreeAttributesReturningTheElement is the method that add
+     * a child element to the input element setting three attributes of the
+     * child element
+     * </p>
+     *
+     * @param element the element whose child is to be appended
+     * @param childName the string constituting the name of the child
+     * @param firstAttributeName the string constituting the first attribute
+     * name
+     * @param firstAttributeValue the string constituting the first attribute
+     * value
+     * @param secondAttributeName the string constituting the second attribute
+     * name
+     * @param secondAttributeValue the string constituting the second attribute
+     * @param thirdAttributeName the string constituting the third attribute
+     * name
+     * @param thirdAttributeValue the string constituting the third attribute
+     * value
+     *
+     * @return the added Element
+     */
+    private Element addElementAndSetThreeAttributesReturningTheElement(Element element, String childName, String firstAttributeName, String firstAttributeValue, String secondAttributeName, String secondAttributeValue, String thirdAttributeName, String thirdAttributeValue) {
+        Element child = addElementToDocument(this.document, childName);
+
+        setAttributeOfElement(child, firstAttributeName, firstAttributeValue);
+        setAttributeOfElement(child, secondAttributeName, secondAttributeValue);
+        setAttributeOfElement(child, thirdAttributeName, thirdAttributeValue);
+
+        appendChildToElement(element, child);
+
+        return child;
+    }
+
+    /**
+     * <p>
+     * addElementAndSetTwoAttributes is the method that add a child element to
+     * the input element setting two attributes of the child element
+     * </p>
+     *
+     * @param element the element whose child is to be appended
+     * @param childName the string constituting the name of the child
+     * @param firstAttributeName the string constituting the first attribute
+     * name
+     * @param firstAttributeValue the string constituting the first attribute
+     * value
+     * @param secondAttributeName the string constituting the second attribute
+     * name
+     * @param secondAttributeValue the string constituting the second attribute
+     * value
+     *
+     */
+    private void addElementAndSetTwoAttributes(Element element, String childName, String firstAttributeName, String firstAttributeValue, String secondAttributeName, String secondAttributeValue) {
+        Element child = addElementToDocument(this.document, childName);
+
+        setAttributeOfElement(child, firstAttributeName, firstAttributeValue);
+        setAttributeOfElement(child, secondAttributeName, secondAttributeValue);
+
+        appendChildToElement(element, child);
+    }
+
+    /**
+     * <p>
+     * addElementAndSetTwoAttributesReturningTheElement is the method that add a
+     * child element to the input element setting two attributes of the child
+     * element
+     * </p>
+     *
+     * @param element the element whose child is to be appended
+     * @param childName the string constituting the name of the child
+     * @param firstAttributeName the string constituting the first attribute
+     * name
+     * @param firstAttributeValue the string constituting the first attribute
+     * value
+     * @param secondAttributeName the string constituting the second attribute
+     * name
+     * @param secondAttributeValue the string constituting the second attribute
+     * value
+     *
+     * @return the added Element
+     */
+    private Element addElementAndSetTwoAttributesReturningTheElement(Element element, String childName, String firstAttributeName, String firstAttributeValue, String secondAttributeName, String secondAttributeValue) {
+        Element child = addElementToDocument(this.document, childName);
+
+        setAttributeOfElement(child, firstAttributeName, firstAttributeValue);
+        setAttributeOfElement(child, secondAttributeName, secondAttributeValue);
+
+        appendChildToElement(element, child);
+
+        return child;
+    }
+
+    /**
+     * <p>
+     * addElementAndSetOneAttributeReturningTheElement is the method that add a
+     * child element to the input element setting an attribute of the child
+     * element
+     * </p>
+     *
+     * @param element the element whose child is to be appended
+     * @param childName the string constituting the name of the child
+     * @param attributeName the string constituting the attribute name
+     * @param attributeValue the string constituting the attribute value
+     *
+     * @return the added Element
+     */
+    private Element addElementAndSetOneAttributeReturningTheElement(Element element, String childName, String attributeName, String attributeValue) {
+        Element child = addElementToDocument(this.document, childName);
+
+        setAttributeOfElement(child, attributeName, attributeValue);
+
+        appendChildToElement(element, child);
+
+        return child;
+    }
+
+    /**
+     * <p>
+     * addElementAndSetTextContext is the method that add a child element to the
+     * input element setting the text content of the child element
+     * </p>
+     *
+     * @param element the element whose child is to be appended
+     * @param childName the string constituting the name of the child
+     * @param textContent the string constituting the text content
+     */
+    private void addElementAndSetTextContext(Element element, String childName, String textContent) {
+        Element child = addElementToDocument(this.document, childName);
+
+        setTextContentOfElement(child, textContent);
+
+        appendChildToElement(element, child);
+    }
+
+    /**
+     * <p>
+     * addElementì is the method that add a child element to the input element
+     * </p>
+     *
+     * @param element the element whose child is to be appended
+     * @param childName the string constituting the name of the child
+     *
+     */
+    private void addElement(Element element, String childName) {
+        Element child = addElementToDocument(this.document, childName);
+
+        appendChildToElement(element, child);
+    }
+
+    /**
+     * <p>
+     * addElementAndReturnIt is the method that add a child element to the input
+     * element and returns it
+     * </p>
+     *
+     * @param element the element whose child is to be appended
+     * @param childName the string constituting the name of the child
+     *
+     * @return the added child element
+     */
+    private Element addElementAndReturnIt(Element element, String childName) {
+        Element child = addElementToDocument(this.document, childName);
+
+        appendChildToElement(element, child);
+
+        return child;
+    }
+
+    /**
+     * <p>
+     * addIeee1599Element is the method that add the IEEE1599 element of the
+     * general layer to the IEEE1599 document
+     * </p>
+     *
+     * @param creator the value of the creator attribute of the ieee1599 element
+     * @param version the value of the version attribute of the ieee1599 element
+     *
+     * @return the added Element
+     */
+    private Element addIeee1599Element(String creator, double version) {
+        Element ieee1599 = addElementToDocument(this.document, "ieee1599");
+
+        setAttributeOfElement(ieee1599, "creator", creator);
+        setAttributeOfElement(ieee1599, "version", "" + version);
+
+        this.document.appendChild(ieee1599);
+        return ieee1599;
+    }
+
+    /**
+     * <p>
+     * createDocument is the method that initializes the document field
+     * </p>
+     *
+     * @throws ParserConfigurationException if there is a configuration error
+     * for the DocumentBuilderFactory class
+     */
+    private void createDocument() throws ParserConfigurationException {
         try {
             DocumentBuilderFactory docFactory = DocumentBuilderFactory.newInstance();
             DocumentBuilder docBuilder = docFactory.newDocumentBuilder();
             this.document = docBuilder.newDocument();
-
         } catch (ParserConfigurationException ex) {
-            LOGGER.log(Level.SEVERE, null, ex);
+            LOGGER.log(Level.SEVERE, ex.getClass() + "The document cannot be created due to a configuration error.");
+            throw new ParserConfigurationException("The document cannot be created due to a configuration error.");
         }
     }
 
+    /**
+     * <p>
+     * addElementToDocument is the method that add an element to the IEEE1599
+     * document
+     * </p>
+     *
+     * @param document the document whose element is to be created
+     * @param elementName the element constituting the element to be added to
+     * the document
+     *
+     * @return the added Element
+     */
     private Element addElementToDocument(Document document, String elementName) {
         return document.createElement(elementName);
     }
 
+    /**
+     * <p>
+     * appendChildToElement is the method that append a child to and element of
+     * the IEEE1599 document
+     * </p>
+     *
+     * @param firstElement the element whose child is to be appended
+     * @param secondElement the element constituting the child of the first
+     * element
+     */
     private void appendChildToElement(Element firstElement, Element secondElement) {
         firstElement.appendChild(secondElement);
     }
 
-    private void setAttributeOfElement(Element element, String firstString, String secondString) {
-        element.setAttribute(firstString, secondString);
+    /**
+     * <p>
+     * setAttributeOfElement is the method that set an attribute of an element
+     * of the IEEE1599 document
+     * </p>
+     *
+     * @param element the element whose attribute is to be set
+     * @param attributeName the string constituting the attribute name
+     * @param attributeValue the string constituting the attribute value
+     */
+    private void setAttributeOfElement(Element element, String attributeName, String attributeValue) {
+        element.setAttribute(attributeName, attributeValue);
     }
 
+    /**
+     * <p>
+     * setTextContentOfElement is the method that set the text content of an
+     * element of the IEEE1599 document
+     * </p>
+     *
+     * @param element the element whose text is to be set
+     * @param string the string constituting the text content
+     */
     private void setTextContentOfElement(Element element, String string) {
         element.setTextContent(string);
     }
@@ -752,5 +1010,9 @@ public class Formatter {
                 .map(key -> key + "=" + map.get(key))
                 .collect(Collectors.joining(", ", "{", "}"));
         return mapAsString;
+    }
+
+    public Document getDocument() {
+        return this.document;
     }
 }
