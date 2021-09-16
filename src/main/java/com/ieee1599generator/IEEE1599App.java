@@ -54,9 +54,9 @@ public class IEEE1599App implements Callable<Void> {
         int[] minDuration;
         @Option(names = "--max-duration", split = "/", description = "maximum duration of musical figures (array composed by <numerator>,<denominator>)")
         int[] maxDuration;
-        @Option(names = "--min-height", description = "minimum heigth of musical figures (<Anglo-Saxon note name><possible accidental (sharp, sharp_and_a_half, demisharp, double_sharp, flat, flat_and_a_half, demiflat, double_flat)>")
+        @Option(names = "--min-height", description = "minimum heigth of musical figures (<Anglo-Saxon note name>-<possible accidental (sharp, sharp_and_a_half, demisharp, double_sharp, flat, flat_and_a_half, demiflat, double_flat)><octave number>")
         String minHeight;
-        @Option(names = "--max-height", description = "maximum heigth of musical figures (<Anglo-Saxon note name><possible accidental (sharp, sharp_and_a_half, demisharp, double_sharp, flat, flat_and_a_half, demiflat, double_flat)>")
+        @Option(names = "--max-height", description = "maximum heigth of musical figures (<Anglo-Saxon note name>-<possible accidental (sharp, sharp_and_a_half, demisharp, double_sharp, flat, flat_and_a_half, demiflat, double_flat)><octave number>")
         String maxHeight;
         @Option(names = "--max-notes-number-chord", description = "maximum number of notes in a chord")
         int maxNumberOfNotesInAChord;
@@ -77,6 +77,7 @@ public class IEEE1599App implements Callable<Void> {
 
     private Map<String, Float> accidentalMap = new HashMap<String, Float>() {
         {
+            put("natural", 0f);
             put("sharp", 1.0f);
             put("sharp_and_a_half", 0.75f);
             put("demisharp", 0.25f);
@@ -127,8 +128,6 @@ public class IEEE1599App implements Callable<Void> {
         }
     };
 
-    private int octavesNumber = 10;
-
     /**
      * <p>
      * call is the overriding method that permits to call the methods needed to
@@ -165,9 +164,9 @@ public class IEEE1599App implements Callable<Void> {
                     .clefsSteps(clefsSteps)
                     .accidentalMap(accidentalMap)
                     .allNotesMap(allNotesMap)
-                    .octavesNumber(octavesNumber)
                     .metreInNumbers(initializer.getMetreInNumbers())
                     .measuresNumber(initializer.getMeasuresNumber())
+                    .irregularGroupsMap(initializer.getIrregularGroupsMap())
                     .build();
 
             formatter.format();
@@ -175,8 +174,8 @@ public class IEEE1599App implements Callable<Void> {
 
         } catch (Exception e) {
             LOGGER.log(Level.SEVERE, "Exception in call method");
-            //System.out.println(e);
-            //e.printStackTrace();
+            System.out.println(e);
+            e.printStackTrace();
         }
         return null;
     }

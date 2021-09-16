@@ -82,10 +82,6 @@ public class Formatter {
      */
     private Map<Float, List<String>> allNotesMap;
     /**
-     * The number of available octaves
-     */
-    private int octavesNumber;
-    /**
      * The metre converted from a string into numbers
      */
     private int[] metreInNumbers;
@@ -98,7 +94,7 @@ public class Formatter {
      */
     private Map<Integer, Integer> irregularGroupsMap;
 
-    public Formatter(long seed, String creator, double docVersion, String title, String author, int instrumentsNumber, List<Instrument> instruments, List<Character> clefs, List<Integer> clefsSteps, Map<String, Float> accidentalMap, Map<Float, List<String>> allNotesMap, int octavesNumber, int[] metreInNumbers, int measuresNumber, Map<Integer, Integer> irregularGroupsMap) {
+    public Formatter(long seed, String creator, double docVersion, String title, String author, int instrumentsNumber, List<Instrument> instruments, List<Character> clefs, List<Integer> clefsSteps, Map<String, Float> accidentalMap, Map<Float, List<String>> allNotesMap, int[] metreInNumbers, int measuresNumber, Map<Integer, Integer> irregularGroupsMap) {
         LOGGER.log(Level.INFO, "Inputs");
 
         this.randomizer = new Randomizer(seed);
@@ -135,10 +131,7 @@ public class Formatter {
         LOGGER.log(Level.INFO, "Accidentals map: " + mapAsString(this.accidentalMap));
 
         this.allNotesMap = allNotesMap;
-        LOGGER.log(Level.INFO, "Pitches map: " + mapAsString(this.allNotesMap));
-
-        this.octavesNumber = octavesNumber;
-        LOGGER.log(Level.INFO, "Octaves number: " + this.octavesNumber);
+        LOGGER.log(Level.INFO, "All notes map: " + mapAsString(this.allNotesMap));
 
         this.metreInNumbers = metreInNumbers;
         LOGGER.log(Level.INFO, "Metre: " + metreInNumbers[0] + ":" + metreInNumbers[1]);
@@ -147,7 +140,7 @@ public class Formatter {
         LOGGER.log(Level.INFO, "Measures number: " + this.measuresNumber);
 
         this.irregularGroupsMap = irregularGroupsMap;
-        LOGGER.log(Level.INFO, "Pitches map: " + mapAsString(this.irregularGroupsMap));
+        //LOGGER.log(Level.INFO, "Irregular groups map: " + mapAsString(this.irregularGroupsMap));
     }
 
     /**
@@ -288,19 +281,18 @@ public class Formatter {
         float minHeight = 0f;
         float maxHeight = 0f;
         for (Map.Entry<Float, List<String>> e : this.allNotesMap.entrySet()) {
-            if (e.getValue().contains(this.instruments.get(i).getMinHeight())) {
+            if (e.getValue().contains(this.instruments.get(i).getMinHeight().replaceAll("\\d",""))) {
                 minHeight = e.getKey();
             }
         }
-        
+
         for (Map.Entry<Float, List<String>> e : this.allNotesMap.entrySet()) {
-            if (e.getValue().contains(this.instruments.get(i).getMaxHeight())) {
+            if (e.getValue().contains(this.instruments.get(i).getMaxHeight().replaceAll("\\d",""))) {
                 maxHeight = e.getKey();
             }
         }
         float randomPitch = this.randomizer.getRandomFloat(minHeight, maxHeight);
         LOGGER.log(Level.INFO, "Random pitch: " + randomPitch);
-      
 
         // random number of notes in a chord
         int notesInAChord = this.randomizer.getRandomInteger(1, this.instruments.get(i).getMaxNumberOfNotesInAChord());
@@ -447,7 +439,7 @@ public class Formatter {
 
             createChordDurationElement(i, randomNote, chord, k, event, irregularGroup);
 
-            createNoteheadElements(notesInAChord, chord, randomPitch, k);
+            createNoteheadElements(notesInAChord, chord, randomPitch, i);
         } else {
             LOGGER.log(Level.INFO, "Add duration element");
             Element duration = addElementToDocument(this.document, "duration");
@@ -470,12 +462,12 @@ public class Formatter {
      * @param k the index of notes and rests number
      *
      */
-    private void createNoteheadElements(int notesInAChord, Element chord, float randomPitch, int k) {
+    private void createNoteheadElements(int notesInAChord, Element chord, float randomPitch, int i) {
         for (int n = 1; n <= notesInAChord; n++) {
             LOGGER.log(Level.INFO, "Add notehead element");
             Element notehead = addElementAndReturnIt(chord, "notehead");
 
-            addPitchElement(randomPitch, k, notehead);
+            addPitchElement(randomPitch, notehead, i);
         }
     }
 
@@ -698,31 +690,39 @@ public class Formatter {
         }
     }
 
-    // da riscrivere
-    private void addPitchElement(float randomPitch, int k, Element notehead) {
+    private void addPitchElement(float randomPitch, Element notehead, int i) {
 
         String randomAccidental = this.randomizer.getRandomStringFromMap(accidentalMap);
 
         LOGGER.log(Level.INFO, "Add pitch element");
         Element pitch = addElementToDocument(this.document, "pitch");
-        int randomOctave = this.randomizer.getRandomInteger(-1, this.octavesNumber - 1);
+        int randomOctave = this.randomizer.getRandomInteger(Integer.parseInt(this.instruments.get(i).getMinHeight().replaceAll("[^\\d-]", "")), Integer.parseInt(this.instruments.get(i).getMaxHeight().replaceAll("[^\\d-]", "")));
 
         randomPitch += this.accidentalMap.get(randomAccidental);
         randomPitch %= 12;
-
         if (randomPitch < 0) {
             randomPitch += 12;
         }
 
+        float maxHeightPitch = 0f;
+        for (Map.Entry<Float, List<String>> e : this.allNotesMap.entrySet()) {
+             LOGGER.log(Level.INFO, "get value " + e.getValue());
+            if (e.getValue().contains(this.instruments.get(i).getMaxHeight().replaceAll("\\d","").trim())) {
+                maxHeightPitch = e.getKey();
+                break;
+            }
+        }
+        if (randomPitch > maxHeightPitch) {
+            randomOctave = this.randomizer.getRandomInteger(this.instruments.get(i).getMinHeight().charAt(this.instruments.get(i).getMinHeight().length() - 1), (int) (randomPitch - maxHeightPitch));
+        }
+
         setAttributeOfElement(pitch, "actual_accidental", "" + randomAccidental);
         setAttributeOfElement(pitch, "octave", "" + randomOctave);
-        // al posto di randomPitch scegliere casualmente dalla corrispondente lista di note
         setAttributeOfElement(pitch, "step", "" + this.randomizer.getRandomElementFromList(this.allNotesMap.get(randomPitch)));
 
         appendChildToElement(notehead, pitch);
 
         addElement(notehead, "printed_accidentals");
-
         addElement(notehead, randomAccidental);
 
     }

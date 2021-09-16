@@ -58,10 +58,6 @@ public class FormatterBuilder {
      */
     private Map<Float, List<String>> allNotesMap;
     /**
-     * The number of available octaves
-     */
-    private int octavesNumber;
-    /**
      * The metre converted from a string into numbers
      */
     private int[] metreInNumbers;
@@ -136,11 +132,6 @@ public class FormatterBuilder {
         return this;
     }
 
-    public FormatterBuilder octavesNumber(int octavesNumber) {
-        this.octavesNumber = octavesNumber;
-        return this;
-    }
-
     public FormatterBuilder metreInNumbers(int[] metreInNumbers) {
         this.metreInNumbers = metreInNumbers;
         return this;
@@ -152,12 +143,12 @@ public class FormatterBuilder {
     }
     
     public FormatterBuilder irregularGroupsMap(Map<Integer, Integer> irregularGroupsMap) {
-        this.irregularGroupsMap = this.irregularGroupsMap;
+        this.irregularGroupsMap = irregularGroupsMap;
         return this;
     }
 
     public Formatter build() {
-        return new Formatter(seed, creator, docVersion, title, author, instrumentsNumber, instruments, clefs, clefsSteps, accidentalMap, allNotesMap, octavesNumber, metreInNumbers, measuresNumber, irregularGroupsMap);
+        return new Formatter(seed, creator, docVersion, title, author, instrumentsNumber, instruments, clefs, clefsSteps, accidentalMap, allNotesMap, metreInNumbers, measuresNumber, irregularGroupsMap);
     }
 
 }
