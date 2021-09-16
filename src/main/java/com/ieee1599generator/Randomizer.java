@@ -39,6 +39,20 @@ public class Randomizer {
 
     /**
      * <p>
+     * getRandomFloat
+     * </p>
+     *
+     * @param min the minimum float
+     * @param max the maximum float
+     * @return a random float in the range between the minimum and maximum
+     * parameters
+     */
+    protected float getRandomFloat(float min, float max) {
+        return min + this.random.nextFloat() * (max - min);
+    }
+
+    /**
+     * <p>
      * getRandomString
      * </p>
      *
@@ -167,7 +181,7 @@ public class Randomizer {
      * @param inputMap the input map
      * @return a random string from the input map
      */
-    protected String getRandomStringFromMap(Map<String, Integer> inputMap) {
+    protected String getRandomStringFromMap(Map<String, Float> inputMap) {
         String[] keySetArray = inputMap.keySet().toArray(new String[inputMap.keySet().size()]);
         int randomIndex = this.random.nextInt(inputMap.keySet().size());
         return keySetArray[randomIndex];

@@ -27,11 +27,11 @@ public class Instrument {
     /**
      * The minimum height of musical figures
      */
-    private final int minHeight;
+    private final String minHeight;
     /**
      * The maximum height of musical figures
      */
-    private final int maxHeight;
+    private final String maxHeight;
     /**
      * The maximum number of notes in a chord
      */
@@ -52,12 +52,8 @@ public class Instrument {
      * The maximum number of the events available for the musical instrument
      */
     private final int maxNumberOfEvents;
-    /**
-     * The map of the irregular groups
-     */
-    private Map<Integer, Integer> irregularGroupsMap = new TreeMap<>();
 
-    public Instrument(int maxNumberOfPlayedNotes, int[] minDuration, int[] maxDuration, int minHeight, int maxHeight, int maxNumberOfNotesInAChord, boolean areIrregularGroupsPresent, int minimumDelay, Map<Double, int[]> notesMap, int maxNumberOfEvents) {
+    public Instrument(int maxNumberOfPlayedNotes, int[] minDuration, int[] maxDuration, String minHeight, String maxHeight, int maxNumberOfNotesInAChord, boolean areIrregularGroupsPresent, int minimumDelay, Map<Double, int[]> notesMap, int maxNumberOfEvents) {
         this.maxNumberOfPlayedNotes = maxNumberOfPlayedNotes;
         this.minDuration = minDuration;
         this.maxDuration = maxDuration;
@@ -82,11 +78,11 @@ public class Instrument {
         return this.maxDuration;
     }
 
-    public int getMinHeight() {
+    public String getMinHeight() {
         return this.minHeight;
     }
 
-    public int getMaxHeight() {
+    public String getMaxHeight() {
         return this.maxHeight;
     }
 

@@ -53,16 +53,16 @@ public class Initializer {
      * @param minimumDelay the minimum delay, expressed in VTU, after which the
      * next note will sound
      */
-    public void initializeInstrumentsParams(int maxNumberOfPlayedNotes, int[] minDuration, int[] maxDuration, int minHeight, int maxHeight, int maxNumberOfNotesInAChord, boolean areIrregularGroupsPresent, int minimumDelay) {
+    public void initializeInstrumentsParams(int maxNumberOfPlayedNotes, int[] minDuration, int[] maxDuration, String minHeight, String maxHeight, int maxNumberOfNotesInAChord, boolean areIrregularGroupsPresent, int minimumDelay) {
 
         // fill the map of the notes from from that of maximum duration to that of minimum duration
         Map<Double, int[]> notesMap = new TreeMap<>();
-        for (int i = maxDuration[0]; i <= minDuration[0]; i *= 2) {
+        for (int i = maxDuration[1]; i <= minDuration[1]; i *= 2) {
             notesMap.put((double) 1 / i, new int[]{i, 1});
         }
 
         // compute the maximum number of events
-        int maxNumberOfEvents = (int) ((((double) 1 / this.metreInNumbers[1]) / ((double) minDuration[1] / minDuration[0])) * this.metreInNumbers[0]);
+        int maxNumberOfEvents = (int) ((((double) 1 / this.metreInNumbers[1]) / ((double) minDuration[0] / minDuration[1])) * this.metreInNumbers[0]);
 
         // fill the map of the irregular groups
         Map<Integer, Integer> irregularGroupsMap = new TreeMap<>();

@@ -50,14 +50,14 @@ public class IEEE1599App implements Callable<Void> {
 
         @Option(names = "--max-notes-number", description = "maximum number of played notes")
         int maxNumberOfPlayedNotes;
-        @Option(names = "--min-duration", split = ",", description = "minimum duration of musical figures (array composed by <denominator>,<numerator>)")
+        @Option(names = "--min-duration", split = "/", description = "minimum duration of musical figures (array composed by <numerator>,<denominator>)")
         int[] minDuration;
-        @Option(names = "--max-duration", split = ",", description = "maximum duration of musical figures (array composed by <denominator>,<numerator>)")
+        @Option(names = "--max-duration", split = "/", description = "maximum duration of musical figures (array composed by <numerator>,<denominator>)")
         int[] maxDuration;
-        @Option(names = "--min-height", description = "minimum heigth of musical figures")
-        int minHeight;
-        @Option(names = "--max-height", description = "maximum heigth of musical figures")
-        int maxHeight;
+        @Option(names = "--min-height", description = "minimum heigth of musical figures (<Anglo-Saxon note name><possible accidental (sharp, sharp_and_a_half, demisharp, double_sharp, flat, flat_and_a_half, demiflat, double_flat)>")
+        String minHeight;
+        @Option(names = "--max-height", description = "maximum heigth of musical figures (<Anglo-Saxon note name><possible accidental (sharp, sharp_and_a_half, demisharp, double_sharp, flat, flat_and_a_half, demiflat, double_flat)>")
+        String maxHeight;
         @Option(names = "--max-notes-number-chord", description = "maximum number of notes in a chord")
         int maxNumberOfNotesInAChord;
         @Option(names = "--irregular-groups", description = "presence of irregular groups (true/false value)")
@@ -69,35 +69,61 @@ public class IEEE1599App implements Callable<Void> {
     @Option(names = {"--seed"}, defaultValue = "1234", description = "seed for random object (default: ${DEFAULT-VALUE})")
     private long seed;
 
-    private double docVersion = 1.0;    // document version
+    private float docVersion = 1.0f;    // document version
 
     private List<Character> clefs = List.of('G', 'F', 'C');
 
     private List<Integer> clefsSteps = List.of(2, 4, 6);
 
-    private Map<String, Integer> accidentalMap = new HashMap<String, Integer>() {
+    private Map<String, Float> accidentalMap = new HashMap<String, Float>() {
         {
-            put("sharp", 1);
-            put("flat", -1);
-            put("double_sharp", 2);
-            put("double_flat", -2);
+            put("sharp", 1.0f);
+            put("sharp_and_a_half", 0.75f);
+            put("demisharp", 0.25f);
+            put("double_sharp", 2.0f);
+            put("flat", -1.0f);
+            put("flat_and_a_half", -0.75f);
+            put("demiflat", -0.25f);
+            put("double_flat", -2.0f);
         }
     };
 
-    private Map<Integer, Character> pitchesMap = new HashMap<Integer, Character>() {
+    private Map<Float, List<String>> allNotesMap = new HashMap<Float, List<String>>() {
         {
-            put(0, 'C');
-            put(1, ' ');
-            put(2, 'D');
-            put(3, ' ');
-            put(4, 'E');
-            put(5, 'F');
-            put(6, ' ');
-            put(7, 'G');
-            put(8, ' ');
-            put(9, 'A');
-            put(10, ' ');
-            put(11, 'B');
+            put(0f, List.of("C", "D-double_flat", "B-sharp"));
+            put(0.25f, List.of("C-demisharp", "D-sharp_and_a_half"));
+            put(0.75f, List.of("C-sharp_and_a_half", "B-demisharp"));
+            put(1f, List.of("C-sharp", "D-flat", "B-double_sharp"));
+            put(1.25f, List.of("D-flat_and_a_half"));
+            put(1.75f, List.of("D-demiflat"));
+            put(2f, List.of("D", "E-double_flat", "C-double_sharp"));
+            put(2.25f, List.of("D-demisharp"));
+            put(2.75f, List.of("D-sharp_and_a_half"));
+            put(3f, List.of("D-sharp", "E-flat", "F-double_flat"));
+            put(3.25f, List.of("E-flat_and_a_half"));
+            put(3.75f, List.of("E-demiflat"));
+            put(4f, List.of("E", "F-flat", "D-double_sharp"));
+            put(4.25f, List.of("E_demisharp", "F-flat_and_a_half"));
+            put(4.75f, List.of("E_sharp_and_a_half", "F-demiflat"));
+            put(5f, List.of("F", "G_double_flat", "E-sharp"));
+            put(5.25f, List.of("F_demisharp"));
+            put(5.75f, List.of("F_sharp_and_a_half"));
+            put(6f, List.of("F_sharp", "G_flat", "E-double_sharp"));
+            put(6.25f, List.of("G_flat_and_a_half"));
+            put(6.75f, List.of("G-demiflat"));
+            put(7f, List.of("G", "A-double_flat", "F-sharp"));
+            put(7.25f, List.of("G-demisharp"));
+            put(7.75f, List.of("G-sharp_and_a_half"));
+            put(8f, List.of("G-sharp", "A-flat"));
+            put(8.25f, List.of("A-flat_and_a_half"));
+            put(8.75f, List.of("A-demiflat"));
+            put(9f, List.of("A", "B-double_flat", "G-double_sharp"));
+            put(9.25f, List.of("A-demisharp"));
+            put(9.75f, List.of("A-sharp_and_a_half"));
+            put(10f, List.of("A-sharp", "B-flat", "C-double_flat"));
+            put(10.25f, List.of("B-flat_and_a_half", "C-demiflat"));
+            put(10.75f, List.of("B-demiflat","C-flat_and_a_half"));
+            put(11f, List.of("B", "C-flat", "A-double_sharp"));
         }
     };
 
@@ -138,7 +164,7 @@ public class IEEE1599App implements Callable<Void> {
                     .clefs(clefs)
                     .clefsSteps(clefsSteps)
                     .accidentalMap(accidentalMap)
-                    .pitchesMap(pitchesMap)
+                    .allNotesMap(allNotesMap)
                     .octavesNumber(octavesNumber)
                     .metreInNumbers(initializer.getMetreInNumbers())
                     .measuresNumber(initializer.getMeasuresNumber())

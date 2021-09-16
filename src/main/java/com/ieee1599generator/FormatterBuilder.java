@@ -52,11 +52,11 @@ public class FormatterBuilder {
     /**
      * The map of accidentals
      */
-    private Map<String, Integer> accidentalMap;
+    private Map<String, Float> accidentalMap;
     /**
-     * The map of pitches
+     * The map of all notes
      */
-    private Map<Integer, Character> pitchesMap;
+    private Map<Float, List<String>> allNotesMap;
     /**
      * The number of available octaves
      */
@@ -126,13 +126,13 @@ public class FormatterBuilder {
         return this;
     }
 
-    public FormatterBuilder accidentalMap(Map<String, Integer> accidentalMap) {
+    public FormatterBuilder accidentalMap(Map<String, Float> accidentalMap) {
         this.accidentalMap = accidentalMap;
         return this;
     }
 
-    public FormatterBuilder pitchesMap(Map<Integer, Character> pitchesMap) {
-        this.pitchesMap = pitchesMap;
+    public FormatterBuilder allNotesMap(Map<Float, List<String>> allNotesMap) {
+        this.allNotesMap = allNotesMap;
         return this;
     }
 
@@ -157,7 +157,7 @@ public class FormatterBuilder {
     }
 
     public Formatter build() {
-        return new Formatter(seed, creator, docVersion, title, author, instrumentsNumber, instruments, clefs, clefsSteps, accidentalMap, pitchesMap, octavesNumber, metreInNumbers, measuresNumber, irregularGroupsMap);
+        return new Formatter(seed, creator, docVersion, title, author, instrumentsNumber, instruments, clefs, clefsSteps, accidentalMap, allNotesMap, octavesNumber, metreInNumbers, measuresNumber, irregularGroupsMap);
     }
 
 }
