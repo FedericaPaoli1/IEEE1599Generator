@@ -196,7 +196,7 @@ public class Formatter {
         Element staffList = addElementAndReturnIt(los, "staff_list");
 
         for (int i = 0; i < instrumentsNumber; i++) {
-            LOGGER.log(Level.INFO, "INSTRUMENT" + i);
+            LOGGER.log(Level.INFO, "INSTRUMENT " + i);
 
             addStaffListComponents(i, staffList);
 
@@ -281,13 +281,13 @@ public class Formatter {
         float minHeight = 0f;
         float maxHeight = 0f;
         for (Map.Entry<Float, List<String>> e : this.allNotesMap.entrySet()) {
-            if (e.getValue().contains(this.instruments.get(i).getMinHeight().replaceAll("\\d",""))) {
+            if (e.getValue().contains(this.instruments.get(i).getMinHeight().replaceAll("\\d", ""))) {
                 minHeight = e.getKey();
             }
         }
 
         for (Map.Entry<Float, List<String>> e : this.allNotesMap.entrySet()) {
-            if (e.getValue().contains(this.instruments.get(i).getMaxHeight().replaceAll("\\d",""))) {
+            if (e.getValue().contains(this.instruments.get(i).getMaxHeight().replaceAll("\\d", ""))) {
                 maxHeight = e.getKey();
             }
         }
@@ -346,7 +346,7 @@ public class Formatter {
         // there is only one event that corresponds to the actual instrument in the actual measure, so if everything has been correctly configured, the Optional can never be empty
         Optional<Element> optionalEvent = this.eventsList.stream().filter(e -> e.getAttribute("id").contains(eventRef)).findAny();
         if (optionalEvent.isEmpty()) {
-            throw new NoSuchElementException("The event corresponding to the instrument " + (i + 1) + " in the measure " + j + " does not exist.");
+            throw new NoSuchElementException("The event " + k + " corresponding to the instrument " + (i + 1) + " in the measure " + j + " does not exist.");
         }
         Element event = optionalEvent.get();
         LOGGER.log(Level.INFO, "Event: " + event);
@@ -421,10 +421,10 @@ public class Formatter {
         // there is only one event that corresponds to the actual instrument in the actual measure, so if everything has been correctly configured, the Optional can never be empty
         Optional<Element> optionalEvent = this.eventsList.stream().filter(e -> e.getAttribute("id").contains(eventRef)).findAny();
         if (optionalEvent.isEmpty()) {
-            throw new NoSuchElementException("The event corresponding to the instrument " + (i + 1) + " in the measure " + j + " does not exist.");
+            throw new NoSuchElementException("The event " + k + " corresponding to the instrument " + (i + 1) + " in the measure " + j + " does not exist.");
         }
         Element event = optionalEvent.get();
-        LOGGER.log(Level.INFO, "Event: " + event);
+        LOGGER.log(Level.INFO, "Event: " + event.getTextContent());
 
         if (!correctNotesAndRests.isEmpty()) {
             LOGGER.log(Level.INFO, "Add chord element");
@@ -693,10 +693,11 @@ public class Formatter {
     private void addPitchElement(float randomPitch, Element notehead, int i) {
 
         String randomAccidental = this.randomizer.getRandomStringFromMap(accidentalMap);
+        int randomOctave = 5;
 
         LOGGER.log(Level.INFO, "Add pitch element");
         Element pitch = addElementToDocument(this.document, "pitch");
-        int randomOctave = this.randomizer.getRandomInteger(Integer.parseInt(this.instruments.get(i).getMinHeight().replaceAll("[^\\d-]", "")), Integer.parseInt(this.instruments.get(i).getMaxHeight().replaceAll("[^\\d-]", "")));
+        randomOctave += this.randomizer.getRandomInteger(Integer.parseInt(this.instruments.get(i).getMinHeight().replaceAll("[^\\d-]", "")), Integer.parseInt(this.instruments.get(i).getMaxHeight().replaceAll("[^\\d-]", "")));
 
         randomPitch += this.accidentalMap.get(randomAccidental);
         randomPitch %= 12;
@@ -706,24 +707,36 @@ public class Formatter {
 
         float maxHeightPitch = 0f;
         for (Map.Entry<Float, List<String>> e : this.allNotesMap.entrySet()) {
-             LOGGER.log(Level.INFO, "get value " + e.getValue());
-            if (e.getValue().contains(this.instruments.get(i).getMaxHeight().replaceAll("\\d","").trim())) {
+            if (e.getValue().contains(this.instruments.get(i).getMaxHeight().replaceAll("\\d", ""))) {
                 maxHeightPitch = e.getKey();
                 break;
             }
         }
         if (randomPitch > maxHeightPitch) {
-            randomOctave = this.randomizer.getRandomInteger(this.instruments.get(i).getMinHeight().charAt(this.instruments.get(i).getMinHeight().length() - 1), (int) (randomPitch - maxHeightPitch));
+            randomOctave += this.randomizer.getRandomInteger(Integer.parseInt(this.instruments.get(i).getMinHeight().replaceAll("[^\\d-]", "")), (int) (randomPitch - maxHeightPitch));
         }
 
-        setAttributeOfElement(pitch, "actual_accidental", "" + randomAccidental);
+        float minimumDistance = 0f;
+        float key = 0f;
+        for (Map.Entry<Float, List<String>> e : this.allNotesMap.entrySet()) {
+            if (e.getKey() == 0f) {
+                minimumDistance = Math.abs(e.getKey() - randomPitch);
+                key = e.getKey();
+            }
+            if (Math.abs(e.getKey() - randomPitch) < minimumDistance) {
+                minimumDistance = Math.abs(e.getKey() - randomPitch);
+                key = e.getKey();
+            }
+        }
+        String randomStringFromAllNotesMap = this.randomizer.getRandomElementFromList(this.allNotesMap.get(key));
+        setAttributeOfElement(pitch, "actual_accidental", "" + randomStringFromAllNotesMap.substring(randomStringFromAllNotesMap.lastIndexOf("-") + 1));
         setAttributeOfElement(pitch, "octave", "" + randomOctave);
-        setAttributeOfElement(pitch, "step", "" + this.randomizer.getRandomElementFromList(this.allNotesMap.get(randomPitch)));
+        setAttributeOfElement(pitch, "step", "" + randomStringFromAllNotesMap.charAt(0));
 
         appendChildToElement(notehead, pitch);
 
-        addElement(notehead, "printed_accidentals");
-        addElement(notehead, randomAccidental);
+        Element printedAccidentals = addElementAndReturnIt(notehead, "printed_accidentals");
+        addElement(printedAccidentals, randomStringFromAllNotesMap.substring(randomStringFromAllNotesMap.lastIndexOf("-") + 1));
 
     }
 
@@ -737,7 +750,7 @@ public class Formatter {
      *
      */
     private void createEvents(Element spine) {
-        for (int j = 1; j <= measuresNumber; j++) {
+        for (int j = 1; j <= this.measuresNumber; j++) {
 
             List<Integer> randomInstruments = this.randomizer.getRandomNonRepeatingIntegers(instrumentsNumber, 1, instrumentsNumber);
 
