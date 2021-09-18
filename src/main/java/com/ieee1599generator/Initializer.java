@@ -85,7 +85,7 @@ public class Initializer {
         }
 
         // compute the maximum number of events
-        int maxNumberOfEvents = (int) ((((double) 1 / this.metreInNumbers[1]) / ((double) minDuration[0] / minDuration[1])) * this.metreInNumbers[0]);
+        int maxNumberOfEvents = (int) ((((double) 1 / this.metreInNumbers[1]) / ((double) minDuration[0] / minDuration[1])) * this.metreInNumbers[0]) * this.measuresNumber;
 
         // create a new instrument with the initialized parameters
         instruments.add(new Instrument(maxNumberOfPlayedNotes, minDuration, maxDuration, minHeight, maxHeight, maxNumberOfNotesInAChord, areIrregularGroupsPresent, minimumDelay, notesMap, maxNumberOfEvents));

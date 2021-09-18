@@ -1,6 +1,9 @@
 package com.ieee1599generator;
 
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.NoSuchElementException;
@@ -37,6 +40,10 @@ public class Formatter {
      * The list of all events of the document
      */
     private final List<Element> eventsList = new ArrayList<>();
+    /**
+     * The map of random number of events for each instrument
+     */
+    private final Map<Integer, Integer[]> randomEventsPerInstrumentMap = new HashMap<>();
     /**
      * The definition or non-definition of the first events in the document
      */
@@ -195,8 +202,8 @@ public class Formatter {
 
         Element staffList = addElementAndReturnIt(los, "staff_list");
 
-        for (int i = 0; i < instrumentsNumber; i++) {
-            LOGGER.log(Level.INFO, "INSTRUMENT " + i);
+        for (int i = 0; i < this.instrumentsNumber; i++) {
+            LOGGER.log(Level.INFO, "INSTRUMENT " + (i + 1));
 
             addStaffListComponents(i, staffList);
 
@@ -234,13 +241,26 @@ public class Formatter {
      *
      */
     private void createMeasureElements(Element part, int i) {
-        for (int j = 1; j <= measuresNumber; j++) {
-            LOGGER.log(Level.INFO, "MEASURE" + j);
+
+        // random number of notes played by the actual instrument
+        int notesNumber = this.randomizer.getRandomInteger(1, this.instruments.get(i).getMaxNumberOfPlayedNotes());
+        LOGGER.log(Level.INFO, "Notes number: " + notesNumber);
+
+        int restsNumber = this.randomEventsPerInstrumentMap.get(i)[0] - notesNumber;
+        LOGGER.log(Level.INFO, "Notes number: " + notesNumber);
+
+        List<Character> notesAndRests = createNotesAndRestsList(this.randomEventsPerInstrumentMap.get(i)[0], notesNumber, restsNumber);
+        this.randomizer.shuffleList(notesAndRests);
+        LOGGER.log(Level.INFO, "Notes and rests:");
+        notesAndRests.forEach(noteOrRest -> LOGGER.log(Level.INFO, "" + noteOrRest));
+
+        for (int j = 1; j <= this.measuresNumber; j++) {
+            LOGGER.log(Level.INFO, "MEASURE " + j);
 
             Element measure = addElementAndSetOneAttributeReturningTheElement(part, "measure", "number", "" + j);
 
             LOGGER.log(Level.INFO, "Create voice element");
-            createVoiceElement(i, measure, j);
+            createVoiceElement(i, measure, j, notesAndRests);
         }
     }
 
@@ -254,29 +274,9 @@ public class Formatter {
      * @param j the index of the measures
      *
      */
-    private void createVoiceElement(int i, Element measure, int j) {
+    private void createVoiceElement(int i, Element measure, int j, List<Character> notesAndRests) {
         LOGGER.log(Level.INFO, "Add voice element");
         Element voice = addElementAndSetOneAttributeReturningTheElement(measure, "voice", "voice_item_ref", "Instrument_" + (i + 1) + "_0_voice");
-
-        String attributeString = "Instrument_" + (i + 1) + "_voice0_measure" + j + "_";
-        // number of events concerning the actual instrument in the actual measure
-        int eventsNumber = (int) this.eventsList.stream().filter(e -> e.getAttribute("id").contains(attributeString)).count();
-        LOGGER.log(Level.INFO, "Events number: " + eventsNumber);
-
-        // random number of notes played by the actual instrument
-        int notesNumber = this.randomizer.getRandomInteger(1, this.instruments.get(i).getMaxNumberOfPlayedNotes());
-        LOGGER.log(Level.INFO, "Notes number: " + notesNumber);
-
-        int notesNumberInAMeasure = computeNotesNumberInAMeasure(notesNumber, eventsNumber);
-        LOGGER.log(Level.INFO, "Notes number in a measure: " + notesNumberInAMeasure);
-
-        int restsNumberInAMeasure = eventsNumber - notesNumberInAMeasure;
-        LOGGER.log(Level.INFO, "Rests number: " + restsNumberInAMeasure);
-
-        List<Character> notesAndRests = createNotesAndRestsList(eventsNumber, notesNumberInAMeasure, restsNumberInAMeasure);
-        this.randomizer.shuffleList(notesAndRests);
-        LOGGER.log(Level.INFO, "Notes and rests:");
-        notesAndRests.forEach(noteOrRest -> LOGGER.log(Level.INFO, "" + noteOrRest));
 
         float minHeight = 0f;
         float maxHeight = 0f;
@@ -301,22 +301,39 @@ public class Formatter {
         // list of notes represented as decimals
         List<Double> notesMapKeysList = new ArrayList<Double>(this.instruments.get(i).getNotesMap().keySet());
 
-        // combinations with repetition of notes, in groups of notes and rests number, whose sum equals 1 and, therefore, it fills the measure
-        List<Double> correctNotesAndRests = Generator
-                .combination(notesMapKeysList)
-                .multi(notesAndRests.size())
-                .stream()
-                .filter(d -> d.stream().reduce(0.0, Double::sum) == 1.0)
-                .findFirst()
-                .orElse(new ArrayList<Double>());
+        List<Double> correctNotesAndRests;
+        if (this.instruments.get(i).getMinDuration()[1] < this.randomEventsPerInstrumentMap.get(i)[1]) {
+            correctNotesAndRests = new ArrayList<Double>();
+        } else if (this.instruments.get(i).getMaxDuration()[1] > this.randomEventsPerInstrumentMap.get(i)[1]) {
+            correctNotesAndRests = new ArrayList<Double>();
+        } else if (this.instruments.get(i).getMinDuration()[1] == this.randomEventsPerInstrumentMap.get(i)[1]) {
+            correctNotesAndRests = Collections.nCopies(this.randomEventsPerInstrumentMap.get(i)[1], (double) this.instruments.get(i).getMinDuration()[0] / this.instruments.get(i).getMinDuration()[1]);
+        } else if (this.instruments.get(i).getMaxDuration()[1] == this.randomEventsPerInstrumentMap.get(i)[1]) {
+            correctNotesAndRests = Collections.nCopies(this.randomEventsPerInstrumentMap.get(i)[1], (double) this.instruments.get(i).getMaxDuration()[0] / this.instruments.get(i).getMaxDuration()[1]);
+        } else {
+            // combinations with repetition of notes, in groups of notes and rests number, whose sum equals 1 and, therefore, it fills the measure
+            /*correctNotesAndRests = Generator
+                    .permutation(notesMapKeysList)
+                    .withRepetitions(this.randomEventsPerInstrumentMap.get(i)[1])
+                    .stream()
+                    .filter(d -> d.stream().reduce(0.0, Double::sum) == 1.0)
+                    .findFirst()
+                    .orElse(new ArrayList<Double>());*/
+            correctNotesAndRests = notesSelection(this.randomEventsPerInstrumentMap.get(i)[1], notesMapKeysList, this.instruments.get(i).getMinDuration()[1]);
+        }
 
         this.randomizer.shuffleList(correctNotesAndRests);
         LOGGER.log(Level.INFO, "Correct notes and rests:");
         correctNotesAndRests.forEach(correctNoteOrRest -> LOGGER.log(Level.INFO, "" + correctNoteOrRest));
 
-        for (int k = 0; k < notesAndRests.size(); k++) {
-
-            if (notesAndRests.get(k) == 'N') {
+        for (int k = 0; k < this.randomEventsPerInstrumentMap.get(i)[1]; k++) {
+            char actualCharacter;
+            if (notesAndRests.size() == 1) {
+                actualCharacter = notesAndRests.get(0);
+            } else {
+                actualCharacter = notesAndRests.remove(0);
+            }
+            if (actualCharacter == 'N') {
                 LOGGER.log(Level.INFO, "Create chord elements");
                 createChordElements(i, j, k, voice, notesInAChord, correctNotesAndRests, randomPitch);
 
@@ -325,6 +342,27 @@ public class Formatter {
                 createRestElements(i, j, k, voice, correctNotesAndRests);
             }
         }
+    }
+
+    private List<Double> notesSelection(int eventsNumberInAMeasure, List<Double> notesMapKeysList, int minDuration) {
+        List<Double> correctNotes = new ArrayList<>();
+        double remainingDuration = 1.0;
+        int remainingEvents = eventsNumberInAMeasure;
+        int notesMapKeysListIndex = 0;
+        while (remainingDuration != 0) {
+            double noteKey = notesMapKeysList.get(notesMapKeysListIndex);
+            remainingDuration -= noteKey;
+            remainingEvents--;
+            if ((remainingDuration * minDuration) >= remainingEvents) {
+                correctNotes.add(noteKey);
+            } else {
+                notesMapKeysListIndex++;
+                remainingDuration += noteKey;
+                remainingEvents++;
+            }
+        }
+
+        return correctNotes;
     }
 
     /**
@@ -355,7 +393,15 @@ public class Formatter {
             LOGGER.log(Level.INFO, "Add rest element");
             Element rest = addElementAndSetOneAttributeReturningTheElement(voice, "rest", "event_ref", eventRef);
 
-            double randomNote = correctNotesAndRests.remove(0);
+            LOGGER.log(Level.INFO, "Correct notes and rests:");
+            correctNotesAndRests.forEach(correctNoteOrRest -> LOGGER.log(Level.INFO, "" + correctNoteOrRest));
+
+            double randomNote;
+            if (correctNotesAndRests.size() == 1) {
+                randomNote = correctNotesAndRests.get(0);
+            } else {
+                randomNote = correctNotesAndRests.remove(0);
+            }
             LOGGER.log(Level.INFO, "Random note: " + randomNote);
 
             createRestDurationElement(i, randomNote, rest, k, event);
@@ -430,7 +476,12 @@ public class Formatter {
             LOGGER.log(Level.INFO, "Add chord element");
             Element chord = addElementAndSetOneAttributeReturningTheElement(voice, "chord", "event_ref", eventRef);
 
-            double randomNote = correctNotesAndRests.remove(0);
+            double randomNote;
+            if (correctNotesAndRests.size() == 1) {
+                randomNote = correctNotesAndRests.get(0);
+            } else {
+                randomNote = correctNotesAndRests.remove(0);
+            }
             LOGGER.log(Level.INFO, "Random note: " + randomNote);
 
             // random irregular group from the map
@@ -750,21 +801,10 @@ public class Formatter {
      *
      */
     private void createEvents(Element spine) {
-        for (int j = 1; j <= this.measuresNumber; j++) {
+        List<Integer> randomInstruments = this.randomizer.getRandomNonRepeatingIntegers(instrumentsNumber, 0, instrumentsNumber - 1);
 
-            List<Integer> randomInstruments = this.randomizer.getRandomNonRepeatingIntegers(instrumentsNumber, 1, instrumentsNumber);
+        defineOtherEvents(randomInstruments, spine);
 
-            if (this.areFirstEventsDefined) {
-
-                defineOtherEvents(1, j, randomInstruments, spine);
-
-                this.areFirstEventsDefined = false;
-
-            } else {
-
-                defineOtherEvents(0, j, randomInstruments, spine);
-            }
-        }
     }
 
     /**
@@ -779,16 +819,35 @@ public class Formatter {
      * @param spine the element whose child is to be appended
      *
      */
-    private void defineOtherEvents(int kIndex, int j, List<Integer> randomInstruments, Element spine) {
+    private void defineOtherEvents(List<Integer> randomInstruments, Element spine) {
         for (int i = 0; i < randomInstruments.size(); i++) {
 
-            int eventsNumber = this.randomizer.getRandomInteger(1, instruments.get(i).getMaxNumberOfEvents());
+            // number of events concerning the actual instrument in the actual measure
+            int eventsNumber = this.randomizer.getRandomInteger(1, this.instruments.get(randomInstruments.get(i)).getMaxNumberOfEvents());
+            if (eventsNumber < this.measuresNumber) {
+                eventsNumber = this.measuresNumber;
+            }
+            LOGGER.log(Level.INFO, "Events number: " + eventsNumber);
 
-            for (int k = kIndex; k < eventsNumber; k++) {
+            int eventsNumberInAMeasure = eventsNumber / this.measuresNumber;
 
-                Element event = addElementAndSetOneAttributeReturningTheElement(spine, "event", "id", "Instrument_" + randomInstruments.get(i) + "_voice0_measure" + j + "_ev" + k);
+            this.randomEventsPerInstrumentMap.put(randomInstruments.get(i), new Integer[]{eventsNumber, eventsNumberInAMeasure});
 
-                this.eventsList.add(event);
+            int kIndex = 0;
+
+            for (int j = 1; j <= this.measuresNumber; j++) {
+                if (j == 1) {
+                    kIndex = 1;
+                } else {
+                    kIndex = 0;
+                }
+
+                for (int k = kIndex; k < eventsNumberInAMeasure; k++) {
+
+                    Element event = addElementAndSetOneAttributeReturningTheElement(spine, "event", "id", "Instrument_" + (randomInstruments.get(i) + 1) + "_voice0_measure" + j + "_ev" + k);
+
+                    this.eventsList.add(event);
+                }
             }
         }
     }
@@ -807,13 +866,13 @@ public class Formatter {
      *
      */
     private void defineFirstEvents(Element spine, String firstPartOfTheFirstAttributeValue, String secondPartOfTheFirstAttributeValue) {
-        for (int i = 1; i <= instrumentsNumber; i++) {
+        for (int i = 1; i <= this.instrumentsNumber; i++) {
 
             Element event = addElementAndSetThreeAttributesReturningTheElement(spine, "event", "id", firstPartOfTheFirstAttributeValue + i + secondPartOfTheFirstAttributeValue, "timing", "" + 0, "hpos", "" + 0);
 
             this.eventsList.add(event);
 
-            this.areFirstEventsDefined = true;
+            //   this.areFirstEventsDefined = true;
         }
     }
 

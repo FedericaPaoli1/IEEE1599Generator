@@ -34,6 +34,11 @@ public class Randomizer {
      * parameters
      */
     protected int getRandomInteger(int min, int max) {
+        if (min > max) {
+            int swap = min;
+            min = max;
+            max = swap;
+        }
         return this.random.nextInt((max - min) + 1) + min;
     }
 
