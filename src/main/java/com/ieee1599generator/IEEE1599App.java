@@ -3,16 +3,18 @@ package com.ieee1599generator;
 import java.util.List;
 import java.util.Map;
 import java.util.HashMap;
+import java.util.NoSuchElementException;
 import java.util.concurrent.Callable;
-import java.util.logging.Level;
-import java.util.logging.Logger;
+import javax.xml.parsers.ParserConfigurationException;
+import javax.xml.transform.TransformerException;
+import org.apache.logging.log4j.LogManager;
 import picocli.CommandLine;
 import picocli.CommandLine.ArgGroup;
 import picocli.CommandLine.Command;
 import picocli.CommandLine.Option;
 
 /**
- * IEEE1599App is the class containing the main method to run the app
+ * Contains the main method to run the app
  *
  * @author Federica Paoli', id: 961887, e-mail:
  * federica.paoli1@studenti.unimi.it
@@ -20,7 +22,7 @@ import picocli.CommandLine.Option;
 @Command(mixinStandardHelpOptions = true)
 public class IEEE1599App implements Callable<Void> {
 
-    private static final Logger LOGGER = Logger.getLogger(IEEE1599App.class.getName());
+    private static org.apache.logging.log4j.Logger logger = LogManager.getLogger(IEEE1599App.class.getName());
 
     @Option(names = {"--creator"}, description = "document creator name")
     private String creator;
@@ -123,15 +125,15 @@ public class IEEE1599App implements Callable<Void> {
             put(9.75f, List.of("A-sharp_and_a_half"));
             put(10f, List.of("A-sharp", "B-flat", "C-double_flat"));
             put(10.25f, List.of("B-flat_and_a_half", "C-demiflat"));
-            put(10.75f, List.of("B-demiflat","C-flat_and_a_half"));
+            put(10.75f, List.of("B-demiflat", "C-flat_and_a_half"));
             put(11f, List.of("B", "C-flat", "A-double_sharp"));
         }
     };
 
     /**
      * <p>
-     * call is the overriding method that permits to call the methods needed to
-     * start the app and create the document in IEEE1599 format.
+     * permits to call the methods needed to start the app and create the
+     * document in IEEE1599 format.
      * </p>
      *
      * @throws Exception
@@ -141,10 +143,9 @@ public class IEEE1599App implements Callable<Void> {
         try {
             if (instrumentsParams.size() != instrumentsNumber) {
                 throw new IllegalArgumentException("Number of instrumentsParams different from number of instruments, "
-                        + "please try again by entering the same number of instrumentsParams for as many instruments as there are.");
+                        + "please try again by entering the same number of instrumentsParams for as many instruments as there are");
             }
 
-            Generator generator = new Generator();
             Initializer initializer = new Initializer(trackLength, metre, bpm);
 
             for (int i = 0; i < instrumentsNumber; i++) {
@@ -170,12 +171,17 @@ public class IEEE1599App implements Callable<Void> {
                     .build();
 
             formatter.format();
-            generator.saveXMLFile(formatter.getDocument());
-
-        } catch (Exception e) {
-            LOGGER.log(Level.SEVERE, "Exception in call method");
-            System.out.println(e);
-            e.printStackTrace();
+            FormatterUtils.saveXMLFile(formatter.getDocument());
+        } catch (IllegalArgumentException illegalArgumentException) {
+            this.logger.error(illegalArgumentException.getClass() + illegalArgumentException.getMessage());
+        } catch (NoSuchElementException noSuchElementException) {
+            this.logger.error(noSuchElementException.getClass() + noSuchElementException.getMessage());
+        } catch (ParserConfigurationException parserConfigurationException) {
+            this.logger.error(parserConfigurationException.getClass() + parserConfigurationException.getMessage());
+        } catch (TransformerException transformerException) {
+            this.logger.error(transformerException.getClass() + transformerException.getMessage());
+        } catch (Exception exception) {
+            this.logger.error("The program terminated due to the exception " + exception.getClass());
         }
         return null;
     }

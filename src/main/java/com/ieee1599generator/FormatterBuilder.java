@@ -4,8 +4,7 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * FormatterBuilder is the class implementing the Builder pattern for the
- * Formatter class
+ * Implements the Builder pattern for the Formatter class
  *
  * @author Federica Paoli', id: 961887, e-mail:
  * federica.paoli1@studenti.unimi.it

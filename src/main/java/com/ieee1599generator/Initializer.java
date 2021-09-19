@@ -6,7 +6,7 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * Initializer is the class that initializes some of the input parameters
+ * Initializes some of the input parameters
  *
  * @author Federica Paoli', id: 961887, e-mail:
  * federica.paoli1@studenti.unimi.it
@@ -58,9 +58,8 @@ public class Initializer {
 
     /**
      * <p>
-     * initializeInstrumentsParams is the method that initializes its input
-     * parameters, so that they can be used more easily within the document to
-     * be created.
+     * initializes its input parameters, so that they can be used more easily
+     * within the document to be created
      * </p>
      *
      * @param maxNumberOfPlayedNotes the maximum number of played notes
@@ -81,7 +80,7 @@ public class Initializer {
         // fill the map of the notes from from that of maximum duration to that of minimum duration
         Map<Double, int[]> notesMap = new HashMap<>();
         for (int i = maxDuration[1]; i <= minDuration[1]; i *= 2) {
-            notesMap.put((double) 1 / i, new int[]{i, 1});
+            notesMap.put((double) 1 / i, new int[]{1, i});
         }
 
         // compute the maximum number of events
@@ -94,7 +93,7 @@ public class Initializer {
 
     /**
      * <p>
-     * computeMeasuresNumber is the method that computes the number of measures
+     * computes the number of measures
      * </p>
      *
      * @param bpm the time expressed in beats per minute (bpm)

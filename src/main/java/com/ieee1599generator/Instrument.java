@@ -5,7 +5,7 @@ import java.util.TreeMap;
 import java.util.stream.Collectors;
 
 /**
- * Istrument is the class representing a musical instrument
+ * Represents a musical instrument
  *
  * @author Federica Paoli', id: 961887, e-mail:
  * federica.paoli1@studenti.unimi.it
@@ -106,24 +106,17 @@ public class Instrument {
         return this.maxNumberOfEvents;
     }
 
-    private <T, R> String mapAsString(Map<T, R> map) {
-        String mapAsString = map.keySet().stream()
-                .map(key -> key + "=" + map.get(key))
-                .collect(Collectors.joining(", ", "{", "}"));
-        return mapAsString;
-    }
-
     @Override
     public String toString() {
         return "Maximum number of played notes: " + this.maxNumberOfPlayedNotes
-                + ", minimum duration: " + this.minDuration[1] + "/" + minDuration[0]
-                + ", maximum duration: " + this.maxDuration[1] + "/" + maxDuration[0]
+                + ", minimum duration: " + this.minDuration[0] + "/" + minDuration[1]
+                + ", maximum duration: " + this.maxDuration[0] + "/" + maxDuration[1]
                 + ", minimum height: " + this.minHeight
                 + ", maximum height: " + this.maxHeight
                 + ", maximum numbers of notes in a chord: " + this.maxNumberOfNotesInAChord
                 + ", are irregular groups present? " + this.areIrregularGroupsPresent
                 + ", minimum delay: " + this.minimumDelay
-                + ", notes map:\n" + mapAsString(this.notesMap)
+                + ", notes map:\n" + FormatterUtils.mapAsString(this.notesMap)
                 + "\nmaximum number of events: " + this.maxNumberOfEvents;
     }
 
