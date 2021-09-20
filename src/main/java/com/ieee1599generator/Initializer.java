@@ -28,7 +28,7 @@ public class Initializer {
     /**
      * The map of irregular groups
      */
-    private Map<Integer, Integer> irregularGroupsMap = new HashMap<>();
+    private final Map<Integer, Integer> irregularGroupsMap = new HashMap<>();
 
     public Initializer(long trackLength, String metre, int bpm) {
 

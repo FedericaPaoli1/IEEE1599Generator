@@ -22,9 +22,8 @@ import org.w3c.dom.Element;
  */
 public class Formatter {
 
-    private static Logger logger = LogManager.getLogger(Formatter.class.getName());
+    private static final Logger logger = LogManager.getLogger(Formatter.class.getName());
 
-    private static final int OCTAVE = 5;
     private static final int DEFAULT_LINES_NUMBER = 5;
     private static final int PITCHES_NUMBER = 12;
 
@@ -47,102 +46,102 @@ public class Formatter {
     /**
      * The document creator name
      */
-    private String creator;
+    private final String creator;
     /**
      * The document version
      */
-    private double docVersion;
+    private final double docVersion;
     /**
      * The document title name
      */
-    private String title;
+    private final String title;
     /**
      * The document author name
      */
-    private String author;
+    private final String author;
     /**
      * The number of musical instruments
      */
-    private int instrumentsNumber;
+    private final int instrumentsNumber;
     /**
      * The list of musical instruments, each with its own parameters
      */
-    private List<Instrument> instruments;
+    private final List<Instrument> instruments;
     /**
      * The list of clefs
      */
-    private List<Character> clefs;
+    private final List<Character> clefs;
     /**
      * The list of clefs steps
      */
-    private List<Integer> clefsSteps;
+    private final List<Integer> clefsSteps;
     /**
      * The map of accidentals
      */
-    private Map<String, Float> accidentalMap;
+    private final Map<String, Float> accidentalMap;
     /**
      * The map of all notes
      */
-    private Map<Float, List<String>> allNotesMap;
+    private final Map<Float, List<String>> allNotesMap;
     /**
      * The metre converted from a string into numbers
      */
-    private int[] metreInNumbers;
+    private final int[] metreInNumbers;
     /**
      * The number of available measures
      */
-    private int measuresNumber;
+    private final int measuresNumber;
     /**
      * The map of irregular groups
      */
-    private Map<Integer, Integer> irregularGroupsMap;
+    private final Map<Integer, Integer> irregularGroupsMap;
 
     public Formatter(long seed, String creator, double docVersion, String title, String author, int instrumentsNumber, List<Instrument> instruments, List<Character> clefs, List<Integer> clefsSteps, Map<String, Float> accidentalMap, Map<Float, List<String>> allNotesMap, int[] metreInNumbers, int measuresNumber, Map<Integer, Integer> irregularGroupsMap) {
 
-        this.logger.info("Inputs");
+        Formatter.logger.info("Inputs");
 
         this.randomizer = new Randomizer(seed);
-        this.logger.info("Randomizer seed: " + seed);
+        Formatter.logger.info("Randomizer seed: " + seed);
 
         this.creator = creator;
-        this.logger.info("Creator: " + this.creator);
+        Formatter.logger.info("Creator: " + this.creator);
 
         this.docVersion = docVersion;
-        this.logger.info("Document version: " + this.docVersion);
+        Formatter.logger.info("Document version: " + this.docVersion);
 
         this.title = title;
-        this.logger.info("Title: " + this.title);
+        Formatter.logger.info("Title: " + this.title);
 
         this.author = author;
-        this.logger.info("Author: " + this.author);
+        Formatter.logger.info("Author: " + this.author);
 
         this.instrumentsNumber = instrumentsNumber;
-        this.logger.info("Number of instruments: " + this.instrumentsNumber);
+        Formatter.logger.info("Number of instruments: " + this.instrumentsNumber);
 
         this.instruments = instruments;
         for (int i = 0; i < this.instrumentsNumber; i++) {
-            this.logger.info("Instrument " + (i + 1) + ": " + this.instruments.get(i).toString());
+            Formatter.logger.info("Instrument " + (i + 1) + ": " + this.instruments.get(i).toString());
         }
         this.clefs = clefs;
-        this.logger.info("Clefs: " + clefs.stream().map(Object::toString).collect(Collectors.joining(", ")));
+        Formatter.logger.info("Clefs: " + clefs.stream().map(Object::toString).collect(Collectors.joining(", ")));
 
         this.clefsSteps = clefsSteps;
-        this.logger.info("Clefs steps: " + clefsSteps.stream().map(Object::toString).collect(Collectors.joining(", ")));
+        Formatter.logger.info("Clefs steps: " + clefsSteps.stream().map(Object::toString).collect(Collectors.joining(", ")));
 
         this.accidentalMap = accidentalMap;
-        this.logger.info("Accidentals map: " + FormatterUtils.mapAsString(this.accidentalMap));
+        Formatter.logger.info("Accidentals map: " + FormatterUtils.mapAsString(this.accidentalMap));
 
         this.allNotesMap = allNotesMap;
-        this.logger.info("All notes map: " + FormatterUtils.notesMapAsString(this.allNotesMap));
+        Formatter.logger.info("All notes map: " + FormatterUtils.notesMapAsString(this.allNotesMap));
 
         this.metreInNumbers = metreInNumbers;
-        this.logger.info("Metre: " + metreInNumbers[0] + ":" + metreInNumbers[1]);
+        Formatter.logger.info("Metre: " + metreInNumbers[0] + ":" + metreInNumbers[1]);
 
         this.measuresNumber = measuresNumber;
-        this.logger.info("Measures number: " + this.measuresNumber);
+        Formatter.logger.info("Measures number: " + this.measuresNumber);
 
         this.irregularGroupsMap = irregularGroupsMap;
-        this.logger.info("Irregular groups map: " + FormatterUtils.mapAsString(this.irregularGroupsMap));
+        Formatter.logger.info("Irregular groups map: " + FormatterUtils.mapAsString(this.irregularGroupsMap));
     }
 
     /**
@@ -155,13 +154,13 @@ public class Formatter {
      */
     public void format() throws ParserConfigurationException {
 
-        this.logger.debug("Create document");
+        Formatter.logger.debug("Create document");
         this.document = FormatterUtils.createDocument();
 
-        this.logger.debug("Create general layer");
+        Formatter.logger.debug("Create general layer");
         Element ieee1599 = createGeneralLayer();
 
-        this.logger.debug("Create logic layer");
+        Formatter.logger.debug("Create logic layer");
         createLogicLayer(ieee1599);
     }
 
@@ -175,10 +174,10 @@ public class Formatter {
     private void createLogicLayer(Element ieee1599) {
         Element logic = FormatterUtils.addElementAndReturnIt(this.document, ieee1599, "logic");
 
-        this.logger.debug("Create spine container");
+        Formatter.logger.debug("Create spine container");
         createSpineContainer(logic);
 
-        this.logger.debug("Create los container");
+        Formatter.logger.debug("Create los container");
         createLosContainer(logic);
     }
 
@@ -196,11 +195,11 @@ public class Formatter {
         Element staffList = FormatterUtils.addElementAndReturnIt(this.document, los, "staff_list");
 
         for (int i = 0; i < this.instrumentsNumber; i++) {
-            this.logger.info("INSTRUMENT " + (i + 1));
+            Formatter.logger.info("INSTRUMENT " + (i + 1));
 
             addStaffListComponents(i, staffList);
 
-            this.logger.debug("Create part element");
+            Formatter.logger.debug("Create part element");
             createPartElement(i, los);
         }
     }
@@ -217,10 +216,10 @@ public class Formatter {
     private void createPartElement(int i, Element los) {
         Element part = FormatterUtils.addElementAndSetOneAttributeReturningTheElement(this.document, los, "part", "id", "Instrument_" + i);
 
-        this.logger.debug("Create voice list container");
+        Formatter.logger.debug("Create voice list container");
         createVoiceListContainer(part, i);
 
-        this.logger.debug("Create measure elements");
+        Formatter.logger.debug("Create measure elements");
         createMeasureElements(part, i);
     }
 
@@ -237,22 +236,22 @@ public class Formatter {
 
         // random number of notes played by the actual instrument
         int notesNumber = this.randomizer.getRandomInteger(1, this.instruments.get(i).getMaxNumberOfPlayedNotes());
-        this.logger.info("Notes number: " + notesNumber);
+        Formatter.logger.info("Notes number: " + notesNumber);
 
         // random number of rests of the actual instrument
         int restsNumber = this.randomEventsPerInstrumentMap.get(i)[0] - notesNumber;
-        this.logger.info("Rests number: " + restsNumber);
+        Formatter.logger.info("Rests number: " + restsNumber);
 
         List<Character> notesAndRests = createNotesAndRestsList(this.randomEventsPerInstrumentMap.get(i)[0], notesNumber, restsNumber);
         this.randomizer.shuffleList(notesAndRests);
-        this.logger.info("Notes and rests: " + notesAndRests.stream().map(Object::toString).collect(Collectors.joining(", ")));
+        Formatter.logger.info("Notes and rests: " + notesAndRests.stream().map(Object::toString).collect(Collectors.joining(", ")));
 
         for (int j = 1; j <= this.measuresNumber; j++) {
-            this.logger.info("MEASURE " + j);
+            Formatter.logger.info("MEASURE " + j);
 
             Element measure = FormatterUtils.addElementAndSetOneAttributeReturningTheElement(this.document, part, "measure", "number", "" + j);
 
-            this.logger.debug("Create voice element");
+            Formatter.logger.debug("Create voice element");
             createVoiceElement(i, measure, j, notesAndRests);
         }
     }
@@ -268,7 +267,7 @@ public class Formatter {
      *
      */
     private void createVoiceElement(int i, Element measure, int j, List<Character> notesAndRests) {
-        this.logger.debug("Add voice element");
+        Formatter.logger.debug("Add voice element");
         Element voice = FormatterUtils.addElementAndSetOneAttributeReturningTheElement(this.document, measure, "voice", "voice_item_ref", "Instrument_" + (i + 1) + "_0_voice");
 
         // pick from allNotesMap the corresponding float to the note name
@@ -276,17 +275,17 @@ public class Formatter {
         float maxHeight = getFloatFromNoteName(this.instruments.get(i).getMaxHeight().replaceAll("\\d", ""));
 
         float randomPitch = this.randomizer.getRandomFloat(minHeight, maxHeight);
-        this.logger.info("Random pitch: " + randomPitch);
+        Formatter.logger.info("Random pitch: " + randomPitch);
 
         // random number of notes in a chord
         int notesInAChord = this.randomizer.getRandomInteger(1, this.instruments.get(i).getMaxNumberOfNotesInAChord());
-        this.logger.info("Notes in a chord: " + notesInAChord);
+        Formatter.logger.info("Notes in a chord: " + notesInAChord);
 
         // list of notes represented as double
-        List<Double> notesMapKeysList = new ArrayList<Double>(this.instruments.get(i).getNotesMap().keySet());
+        List<Double> notesMapKeysList = new ArrayList<>(this.instruments.get(i).getNotesMap().keySet());
 
         int eventsNumberInAMeasure = this.randomEventsPerInstrumentMap.get(i)[1];
-        this.logger.info("Events number in a measure: " + eventsNumberInAMeasure);
+        Formatter.logger.info("Events number in a measure: " + eventsNumberInAMeasure);
 
         // compute a selection of the correct musical figures for the actual measure
         List<Double> correctNotesAndRests = selectCorrectNotesAndRests(i, eventsNumberInAMeasure, notesMapKeysList);
@@ -301,11 +300,11 @@ public class Formatter {
             }
 
             if (actualCharacter == 'N') {
-                this.logger.debug("Create chord elements");
+                Formatter.logger.debug("Create chord elements");
                 createChordElements(i, j, k, voice, notesInAChord, correctNotesAndRests, randomPitch);
 
             } else {
-                this.logger.debug("Create rest elements");
+                Formatter.logger.debug("Create rest elements");
                 createRestElements(i, j, k, voice, correctNotesAndRests);
             }
         }
@@ -325,9 +324,9 @@ public class Formatter {
     private List<Double> selectCorrectNotesAndRests(int i, int eventsNumberInAMeasure, List<Double> notesMapKeysList) {
         List<Double> correctNotesAndRests;
         if (this.instruments.get(i).getMinDuration()[1] < eventsNumberInAMeasure) {
-            correctNotesAndRests = new ArrayList<Double>();
+            correctNotesAndRests = new ArrayList<>();
         } else if (this.instruments.get(i).getMaxDuration()[1] > eventsNumberInAMeasure) {
-            correctNotesAndRests = new ArrayList<Double>();
+            correctNotesAndRests = new ArrayList<>();
         } else if (this.instruments.get(i).getMinDuration()[1] == eventsNumberInAMeasure) {
             correctNotesAndRests = Collections.nCopies(eventsNumberInAMeasure, (double) this.instruments.get(i).getMinDuration()[0] / this.instruments.get(i).getMinDuration()[1]);
         } else if (this.instruments.get(i).getMaxDuration()[1] == eventsNumberInAMeasure) {
@@ -336,7 +335,7 @@ public class Formatter {
             correctNotesAndRests = selectNotes(eventsNumberInAMeasure, notesMapKeysList, this.instruments.get(i).getMinDuration()[1]);
         }
         this.randomizer.shuffleList(correctNotesAndRests);
-        this.logger.info("Correct notes and rests: " + correctNotesAndRests.stream().map(Object::toString).collect(Collectors.joining(", ")));
+        Formatter.logger.info("Correct notes and rests: " + correctNotesAndRests.stream().map(Object::toString).collect(Collectors.joining(", ")));
 
         return correctNotesAndRests;
     }
@@ -375,7 +374,7 @@ public class Formatter {
      */
     private List<Double> selectNotes(int eventsNumberInAMeasure, List<Double> notesMapKeysList, int minDuration) {
         List<Double> correctNotes = new ArrayList<>();
-        double remainingDuration = 1.0;
+        double remainingDuration = (double) (this.metreInNumbers[0]) / this.metreInNumbers[1];
         int remainingEvents = eventsNumberInAMeasure;
         int notesMapKeysListIndex = 0;
 
@@ -421,13 +420,14 @@ public class Formatter {
         // there is only one event that corresponds to the actual instrument in the actual measure, so if everything has been correctly configured, the Optional can never be empty
         Optional<Element> optionalEvent = this.eventsList.stream().filter(e -> e.getAttribute("id").contains(eventRef)).findAny();
         if (optionalEvent.isEmpty()) {
-            throw new NoSuchElementException("The event " + k + " corresponding to the instrument " + (i + 1) + " in the measure " + j + " does not exist.");
+            Formatter.logger.error("The event " + k + " corresponding to the instrument " + (i + 1) + " in the measure " + j + " does not exist");
+            throw new NoSuchElementException(" the event " + k + " corresponding to the instrument " + (i + 1) + " in the measure " + j + " does not exist");
         }
         Element event = optionalEvent.get();
-        this.logger.info("Event: " + eventRef);
+        Formatter.logger.info("Event: " + eventRef);
 
         if (!correctNotesAndRests.isEmpty()) {
-            this.logger.debug("Add rest element");
+            Formatter.logger.debug("Add rest element");
             Element rest = FormatterUtils.addElementAndSetOneAttributeReturningTheElement(this.document, voice, "rest", "event_ref", eventRef);
 
             double randomNote;
@@ -436,16 +436,16 @@ public class Formatter {
             } else {
                 randomNote = correctNotesAndRests.remove(0);
             }
-            this.logger.info("Random note: " + randomNote);
+            Formatter.logger.info("Random note: " + randomNote);
 
             createRestDurationElement(i, randomNote, rest, k, event);
         } else {
-            this.logger.debug("Add duration element");
+            Formatter.logger.debug("Add duration element");
             Element duration = FormatterUtils.addElementToDocument(this.document, "duration");
             FormatterUtils.setAttributeOfElement(duration, "den", "");
             FormatterUtils.setAttributeOfElement(duration, "num", "");
 
-            this.logger.debug("Add event attributes of duration element");
+            Formatter.logger.debug("Add event attributes of duration element");
             addEventAttributes(i, k, event, duration);
         }
     }
@@ -464,17 +464,17 @@ public class Formatter {
      */
     private void createRestDurationElement(int i, double randomNote, Element rest, int k, Element event) {
         if (randomNote == 1) {
-            this.logger.debug("Add duration element");
+            Formatter.logger.debug("Add duration element");
             Element duration = FormatterUtils.addElementAndSetTwoAttributesReturningTheElement(this.document, rest, "duration", "den", "" + metreInNumbers[1], "num", "" + metreInNumbers[0]);
 
-            this.logger.debug("Add event attributes of duration element");
+            Formatter.logger.debug("Add event attributes of duration element");
             addEventAttributes(i, k, event, duration);
 
         } else {
-            this.logger.debug("Add duration element");
-            Element duration = FormatterUtils.addElementAndSetTwoAttributesReturningTheElement(this.document, rest, "duration", "den", "" + this.instruments.get(i).getNotesMap().get(randomNote)[0], "num", "" + 1);
+            Formatter.logger.debug("Add duration element");
+            Element duration = FormatterUtils.addElementAndSetTwoAttributesReturningTheElement(this.document, rest, "duration", "den", "" + this.instruments.get(i).getNotesMap().get(randomNote)[1], "num", "" + 1);
 
-            this.logger.debug("Add event attributes of duration element");
+            Formatter.logger.debug("Add event attributes of duration element");
             addEventAttributes(i, k, event, duration);
         }
     }
@@ -500,13 +500,14 @@ public class Formatter {
         // there is only one event that corresponds to the actual instrument in the actual measure, so if everything has been correctly configured, the Optional can never be empty
         Optional<Element> optionalEvent = this.eventsList.stream().filter(e -> e.getAttribute("id").contains(eventRef)).findAny();
         if (optionalEvent.isEmpty()) {
-            throw new NoSuchElementException("The event " + k + " corresponding to the instrument " + (i + 1) + " in the measure " + j + " does not exist.");
+            Formatter.logger.error("The event " + k + " corresponding to the instrument " + (i + 1) + " in the measure " + j + " does not exist");
+            throw new NoSuchElementException(" the event " + k + " corresponding to the instrument " + (i + 1) + " in the measure " + j + " does not exist");
         }
         Element event = optionalEvent.get();
-        this.logger.info("Event: " + eventRef);
+        Formatter.logger.info("Event: " + eventRef);
 
         if (!correctNotesAndRests.isEmpty()) {
-            this.logger.debug("Add chord element");
+            Formatter.logger.debug("Add chord element");
             Element chord = FormatterUtils.addElementAndSetOneAttributeReturningTheElement(this.document, voice, "chord", "event_ref", eventRef);
 
             double randomNote;
@@ -515,22 +516,22 @@ public class Formatter {
             } else {
                 randomNote = correctNotesAndRests.remove(0);
             }
-            this.logger.info("Random note: " + randomNote);
+            Formatter.logger.info("Random note: " + randomNote);
 
             // random irregular group from the map
             int irregularGroup = this.randomizer.getRandomIntFromMap(this.irregularGroupsMap);
-            this.logger.info("Irregular group: " + irregularGroup + "/" + this.metreInNumbers[1] * this.irregularGroupsMap.get(irregularGroup));
+            Formatter.logger.info("Irregular group: " + irregularGroup + "/" + this.metreInNumbers[1] * this.irregularGroupsMap.get(irregularGroup));
 
             createChordDurationElement(i, randomNote, chord, k, event, irregularGroup);
 
             createNoteheadElements(notesInAChord, chord, randomPitch, i);
         } else {
-            this.logger.debug("Add duration element");
+            Formatter.logger.debug("Add duration element");
             Element duration = FormatterUtils.addElementToDocument(this.document, "duration");
             FormatterUtils.setAttributeOfElement(duration, "den", "");
             FormatterUtils.setAttributeOfElement(duration, "num", "");
 
-            this.logger.debug("Add event attributes of duration element");
+            Formatter.logger.debug("Add event attributes of duration element");
             addEventAttributes(i, k, event, duration);
         }
     }
@@ -548,10 +549,10 @@ public class Formatter {
      */
     private void createNoteheadElements(int notesInAChord, Element chord, float randomPitch, int i) {
         for (int n = 1; n <= notesInAChord; n++) {
-            this.logger.debug("Add notehead element");
+            Formatter.logger.debug("Add notehead element");
             Element notehead = FormatterUtils.addElementAndReturnIt(this.document, chord, "notehead");
 
-            this.logger.debug("Add pitch element");
+            Formatter.logger.debug("Add pitch element");
             addPitchElement(randomPitch, notehead, i);
         }
     }
@@ -571,22 +572,22 @@ public class Formatter {
      */
     private void createChordDurationElement(int i, double randomNote, Element chord, int k, Element event, int irregularGroup) {
         if (randomNote == 1) {
-            this.logger.debug("Add duration element");
+            Formatter.logger.debug("Add duration element");
             Element duration = FormatterUtils.addElementAndSetTwoAttributesReturningTheElement(this.document, chord, "duration", "den", "" + metreInNumbers[1], "num", "" + metreInNumbers[0]);
 
-            this.logger.debug("Add event attributes of duration element");
+            Formatter.logger.debug("Add event attributes of duration element");
             addEventAttributes(i, k, event, duration);
 
             additionForIrregularGroupsPresence(this.instruments.get(i).getAreIrregularGroupsPresent(), duration, "tuplet_ratio", "enter_num", "" + irregularGroup, "enter_den", "" + this.metreInNumbers[1] * this.irregularGroupsMap.get(irregularGroup), "in_num", "" + 1, "in_den", "" + this.metreInNumbers[1]);
 
         } else {
-            this.logger.debug("Add duration element");
-            Element duration = FormatterUtils.addElementAndSetTwoAttributesReturningTheElement(this.document, chord, "duration", "den", "" + instruments.get(i).getNotesMap().get(randomNote)[0], "num", "" + 1);
+            Formatter.logger.debug("Add duration element");
+            Element duration = FormatterUtils.addElementAndSetTwoAttributesReturningTheElement(this.document, chord, "duration", "den", "" + instruments.get(i).getNotesMap().get(randomNote)[1], "num", "" + 1);
 
-            this.logger.debug("Add event attributes of duration element");
+            Formatter.logger.debug("Add event attributes of duration element");
             addEventAttributes(i, k, event, duration);
 
-            additionForIrregularGroupsPresence(this.instruments.get(i).getAreIrregularGroupsPresent(), duration, "tuplet_ratio", "enter_num", "" + irregularGroup, "enter_den", "" + this.metreInNumbers[1] * this.irregularGroupsMap.get(irregularGroup), "in_num", "" + 1, "in_den", "" + this.instruments.get(i).getNotesMap().get(randomNote)[0]);
+            additionForIrregularGroupsPresence(this.instruments.get(i).getAreIrregularGroupsPresent(), duration, "tuplet_ratio", "enter_num", "" + irregularGroup, "enter_den", "" + this.metreInNumbers[1] * this.irregularGroupsMap.get(irregularGroup), "in_num", "" + 1, "in_den", "" + this.instruments.get(i).getNotesMap().get(randomNote)[1]);
         }
     }
 
@@ -600,10 +601,10 @@ public class Formatter {
      *
      */
     private void createVoiceListContainer(Element part, int i) {
-        this.logger.debug("Add voice_list element");
+        Formatter.logger.debug("Add voice_list element");
         Element voiceList = FormatterUtils.addElementAndReturnIt(this.document, part, "voice_list");
 
-        this.logger.debug("Add voice_item element");
+        Formatter.logger.debug("Add voice_item element");
         FormatterUtils.addElementAndSetTwoAttributes(this.document, voiceList, "voice_item", "id", "Instrument_" + (i + 1) + "_0_voice", "staff_ref", "Instrument_" + (i + 1) + "_staff");
     }
 
@@ -646,16 +647,16 @@ public class Formatter {
      *
      */
     private void addStaffListComponents(int i, Element staffList) {
-        this.logger.debug("Add staff element");
+        Formatter.logger.debug("Add staff element");
         Element staff = FormatterUtils.addElementAndSetTwoAttributesReturningTheElement(this.document, staffList, "staff", "id", "Instrument_" + (i + 1) + "_staff", "line_number", "" + DEFAULT_LINES_NUMBER);
 
-        this.logger.debug("Add time_signature element");
+        Formatter.logger.debug("Add time_signature element");
         Element timeSignature = FormatterUtils.addElementAndSetOneAttributeReturningTheElement(this.document, staff, "time_signature", "event_ref", "TimeSignature_Instrument_" + (i + 1) + "_1");
 
-        this.logger.debug("Add time_indication element");
+        Formatter.logger.debug("Add time_indication element");
         FormatterUtils.addElementAndSetTwoAttributes(this.document, timeSignature, "time_indication", "den", "" + this.metreInNumbers[1], "num", "" + this.metreInNumbers[0]);
 
-        this.logger.debug("Add clef element");
+        Formatter.logger.debug("Add clef element");
         FormatterUtils.addElementAndSetFourAttributes(this.document, staff, "clef", "event_ref", "Clef_Instrument_" + (i + 1) + "_1", "shape", "" + this.randomizer.getRandomElementFromList(this.clefs), "staff_step", "" + this.randomizer.getRandomElementFromList(this.clefsSteps), "octave_num", "" + 0);
 
     }
@@ -669,10 +670,10 @@ public class Formatter {
      * as attributes
      */
     private void createSpineContainer(Element logic) {
-        this.logger.debug("Add spine element");
+        Formatter.logger.debug("Add spine element");
         Element spine = FormatterUtils.addElementAndReturnIt(this.document, logic, "spine");
 
-        this.logger.debug("Add the first events to the spine container");
+        Formatter.logger.debug("Add the first events to the spine container");
         defineFirstEvents(spine, "Instrument_", "_voice0_measure1_ev0");
         defineFirstEvents(spine, "TimeSignature_Instrument_", "_1");
         defineFirstEvents(spine, "Clef_Instrument_", "_1");
@@ -688,18 +689,18 @@ public class Formatter {
      * @return the first Element of the General layer
      */
     private Element createGeneralLayer() {
-        this.logger.debug("Add ieee1599 element");
+        Formatter.logger.debug("Add ieee1599 element");
         Element ieee1599 = FormatterUtils.addIeee1599Element(this.document, this.creator, this.docVersion);
 
-        this.logger.debug("Add general element");
+        Formatter.logger.debug("Add general element");
         Element general = FormatterUtils.addElementAndReturnIt(this.document, ieee1599, "general");
 
-        this.logger.debug("Add description element");
+        Formatter.logger.debug("Add description element");
         Element description = FormatterUtils.addElementAndReturnIt(this.document, general, "description");
 
-        this.logger.debug("Add main_title element");
+        Formatter.logger.debug("Add main_title element");
         FormatterUtils.addElementAndSetTextContext(this.document, description, "main_title", this.title);
-        this.logger.debug("Add author element");
+        Formatter.logger.debug("Add author element");
         FormatterUtils.addElementAndSetTextContext(this.document, description, "author", this.author);
 
         return ieee1599;
@@ -734,7 +735,7 @@ public class Formatter {
     private void additionForIrregularGroupsPresence(boolean areIrregularGroupsPresent, Element element, String childName, String firstAttributeName, String firstAttributeValue, String secondAttributeName, String secondAttributeValue, String thirdAttributeName, String thirdAttributeValue, String fourthAttributeName, String fourthAttributeValue) {
 
         if (areIrregularGroupsPresent) {
-            this.logger.debug("Add irregular group elements");
+            Formatter.logger.debug("Add irregular group elements");
             if (this.randomizer.getRandomBoolean()) {
                 FormatterUtils.addElementAndSetFourAttributes(this.document, element, childName, firstAttributeName, firstAttributeValue, secondAttributeName, secondAttributeValue, thirdAttributeName, thirdAttributeValue, fourthAttributeName, fourthAttributeValue);
 
@@ -755,7 +756,7 @@ public class Formatter {
      *
      */
     private void addEventAttributes(int i, int k, Element event, Element duration) {
-        if (k > 0 && duration.getAttribute("den") != "") {
+        if (k > 0 && !"".equals(duration.getAttribute("den"))) {
             FormatterUtils.setAttributeOfElement(event, "timing", "" + this.instruments.get(i).getMinimumDelay() * (instruments.get(i).getMinDuration()[1] / Integer.parseInt(duration.getAttribute("den"))));
             FormatterUtils.setAttributeOfElement(event, "hpos", "" + this.instruments.get(i).getMinimumDelay() * (instruments.get(i).getMinDuration()[1] / Integer.parseInt(duration.getAttribute("den"))));
         } else {
@@ -777,12 +778,10 @@ public class Formatter {
     private void addPitchElement(float randomPitch, Element notehead, int i) {
 
         String randomAccidental = this.randomizer.getRandomStringFromMap(accidentalMap);
-        // default octave (conventionally the cental one)
-        int randomOctave = OCTAVE;
-
+        
         Element pitch = FormatterUtils.addElementToDocument(this.document, "pitch");
 
-        randomOctave += this.randomizer.getRandomInteger(Integer.parseInt(this.instruments.get(i).getMinHeight().replaceAll("[^\\d-]", "")), Integer.parseInt(this.instruments.get(i).getMaxHeight().replaceAll("[^\\d-]", "")));
+        int randomOctave = this.randomizer.getRandomInteger(Integer.parseInt(this.instruments.get(i).getMinHeight().replaceAll("[^\\d-]", "")), Integer.parseInt(this.instruments.get(i).getMaxHeight().replaceAll("[^\\d-]", "")));
 
         randomPitch += this.accidentalMap.get(randomAccidental);
         randomPitch %= PITCHES_NUMBER;
@@ -804,20 +803,29 @@ public class Formatter {
         // get a random note name corresponding to the actual pitch
         String randomStringFromAllNotesMap = this.randomizer.getRandomElementFromList(this.allNotesMap.get(key));
 
-        this.logger.info("Pitch: " + key);
-        this.logger.info("Actual accidental: " + randomStringFromAllNotesMap.substring(randomStringFromAllNotesMap.lastIndexOf("-") + 1));
-        this.logger.info("Octave: " + randomOctave);
-        this.logger.info("Note name: " + randomStringFromAllNotesMap.charAt(0));
+        String actualAccidental;
+        if (randomStringFromAllNotesMap.contains("_")) {
+            actualAccidental = randomStringFromAllNotesMap.substring(2);
+        } else {
+            actualAccidental = "natural";
+        }
 
-        FormatterUtils.setAttributeOfElement(pitch, "actual_accidental", "" + randomStringFromAllNotesMap.substring(randomStringFromAllNotesMap.lastIndexOf("-") + 1));
+        Formatter.logger.info("Pitch: " + key);
+
+        FormatterUtils.setAttributeOfElement(pitch, "actual_accidental", "" + actualAccidental);
+        Formatter.logger.info("Actual accidental: " + actualAccidental);
+
         FormatterUtils.setAttributeOfElement(pitch, "octave", "" + randomOctave);
+        Formatter.logger.info("Octave: " + randomOctave);
+
         FormatterUtils.setAttributeOfElement(pitch, "step", "" + randomStringFromAllNotesMap.charAt(0));
+        Formatter.logger.info("Note name: " + randomStringFromAllNotesMap.charAt(0));
 
         FormatterUtils.appendChildToElement(notehead, pitch);
 
-        this.logger.debug("Add printed_accidentals element");
+        Formatter.logger.debug("Add printed_accidentals element");
         Element printedAccidentals = FormatterUtils.addElementAndReturnIt(this.document, notehead, "printed_accidentals");
-        FormatterUtils.addElement(this.document, printedAccidentals, randomStringFromAllNotesMap.substring(randomStringFromAllNotesMap.lastIndexOf("-") + 1));
+        FormatterUtils.addElement(this.document, printedAccidentals, actualAccidental);
 
     }
 
@@ -859,7 +867,7 @@ public class Formatter {
     private void createEvents(Element spine) {
         List<Integer> randomInstruments = this.randomizer.getRandomNonRepeatingIntegers(instrumentsNumber, 0, instrumentsNumber - 1);
 
-        this.logger.debug("Add all the events to the spine container");
+        Formatter.logger.debug("Add all the events to the spine container");
         defineOtherEvents(randomInstruments, spine);
 
     }
@@ -881,13 +889,13 @@ public class Formatter {
             if (eventsNumber < this.measuresNumber) {
                 eventsNumber = this.measuresNumber;
             }
-            this.logger.info("Events number for the instrument " + i + " :" + eventsNumber);
+            Formatter.logger.info("Events number for the instrument " + i + " :" + eventsNumber);
 
             int eventsNumberInAMeasure = eventsNumber / this.measuresNumber;
 
             this.randomEventsPerInstrumentMap.put(randomInstruments.get(i), new Integer[]{eventsNumber, eventsNumberInAMeasure});
 
-            int kIndex = 0;
+            int kIndex;
 
             for (int j = 1; j <= this.measuresNumber; j++) {
 

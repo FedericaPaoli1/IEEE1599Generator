@@ -8,6 +8,7 @@ import java.util.concurrent.Callable;
 import javax.xml.parsers.ParserConfigurationException;
 import javax.xml.transform.TransformerException;
 import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import picocli.CommandLine;
 import picocli.CommandLine.ArgGroup;
 import picocli.CommandLine.Command;
@@ -22,7 +23,7 @@ import picocli.CommandLine.Option;
 @Command(mixinStandardHelpOptions = true)
 public class IEEE1599App implements Callable<Void> {
 
-    private static org.apache.logging.log4j.Logger logger = LogManager.getLogger(IEEE1599App.class.getName());
+    private static final Logger logger = LogManager.getLogger(IEEE1599App.class.getName());
 
     @Option(names = {"--creator"}, description = "document creator name")
     private String creator;
@@ -56,9 +57,9 @@ public class IEEE1599App implements Callable<Void> {
         int[] minDuration;
         @Option(names = "--max-duration", split = "/", description = "maximum duration of musical figures (array composed by <numerator>,<denominator>)")
         int[] maxDuration;
-        @Option(names = "--min-height", description = "minimum heigth of musical figures (<Anglo-Saxon note name>-<possible accidental (sharp, sharp_and_a_half, demisharp, double_sharp, flat, flat_and_a_half, demiflat, double_flat)><octave number>")
+        @Option(names = "--min-height", description = "minimum heigth of musical figures (<Anglo-Saxon note name>_<possible accidental (sharp, sharp_and_a_half, demisharp, double_sharp, flat, flat_and_a_half, demiflat, double_flat)><octave number>")
         String minHeight;
-        @Option(names = "--max-height", description = "maximum heigth of musical figures (<Anglo-Saxon note name>-<possible accidental (sharp, sharp_and_a_half, demisharp, double_sharp, flat, flat_and_a_half, demiflat, double_flat)><octave number>")
+        @Option(names = "--max-height", description = "maximum heigth of musical figures (<Anglo-Saxon note name>_<possible accidental (sharp, sharp_and_a_half, demisharp, double_sharp, flat, flat_and_a_half, demiflat, double_flat)><octave number>")
         String maxHeight;
         @Option(names = "--max-notes-number-chord", description = "maximum number of notes in a chord")
         int maxNumberOfNotesInAChord;
@@ -71,13 +72,13 @@ public class IEEE1599App implements Callable<Void> {
     @Option(names = {"--seed"}, defaultValue = "1234", description = "seed for random object (default: ${DEFAULT-VALUE})")
     private long seed;
 
-    private float docVersion = 1.0f;    // document version
+    private final float docVersion = 1.0f;    // document version
 
-    private List<Character> clefs = List.of('G', 'F', 'C');
+    private final List<Character> clefs = List.of('G', 'F', 'C');
 
-    private List<Integer> clefsSteps = List.of(2, 4, 6);
+    private final List<Integer> clefsSteps = List.of(2, 4, 6);
 
-    private Map<String, Float> accidentalMap = new HashMap<String, Float>() {
+    private final Map<String, Float> accidentalMap = new HashMap<String, Float>() {
         {
             put("natural", 0f);
             put("sharp", 1.0f);
@@ -91,42 +92,42 @@ public class IEEE1599App implements Callable<Void> {
         }
     };
 
-    private Map<Float, List<String>> allNotesMap = new HashMap<Float, List<String>>() {
+    private final Map<Float, List<String>> allNotesMap = new HashMap<Float, List<String>>() {
         {
-            put(0f, List.of("C", "D-double_flat", "B-sharp"));
-            put(0.25f, List.of("C-demisharp", "D-sharp_and_a_half"));
-            put(0.75f, List.of("C-sharp_and_a_half", "B-demisharp"));
-            put(1f, List.of("C-sharp", "D-flat", "B-double_sharp"));
-            put(1.25f, List.of("D-flat_and_a_half"));
-            put(1.75f, List.of("D-demiflat"));
-            put(2f, List.of("D", "E-double_flat", "C-double_sharp"));
-            put(2.25f, List.of("D-demisharp"));
-            put(2.75f, List.of("D-sharp_and_a_half"));
-            put(3f, List.of("D-sharp", "E-flat", "F-double_flat"));
-            put(3.25f, List.of("E-flat_and_a_half"));
-            put(3.75f, List.of("E-demiflat"));
-            put(4f, List.of("E", "F-flat", "D-double_sharp"));
-            put(4.25f, List.of("E_demisharp", "F-flat_and_a_half"));
-            put(4.75f, List.of("E_sharp_and_a_half", "F-demiflat"));
-            put(5f, List.of("F", "G_double_flat", "E-sharp"));
+            put(0f, List.of("C", "D_double_flat", "B_sharp"));
+            put(0.25f, List.of("C_demisharp", "D_sharp_and_a_half"));
+            put(0.75f, List.of("C_sharp_and_a_half", "B_demisharp"));
+            put(1f, List.of("C_sharp", "D_flat", "B_double_sharp"));
+            put(1.25f, List.of("D_flat_and_a_half"));
+            put(1.75f, List.of("D_demiflat"));
+            put(2f, List.of("D", "E_double_flat", "C_double_sharp"));
+            put(2.25f, List.of("D_demisharp"));
+            put(2.75f, List.of("D_sharp_and_a_half"));
+            put(3f, List.of("D_sharp", "E_flat", "F_double_flat"));
+            put(3.25f, List.of("E_flat_and_a_half"));
+            put(3.75f, List.of("E_demiflat"));
+            put(4f, List.of("E", "F_flat", "D_double_sharp"));
+            put(4.25f, List.of("E_demisharp", "F_flat_and_a_half"));
+            put(4.75f, List.of("E_sharp_and_a_half", "F_demiflat"));
+            put(5f, List.of("F", "G_double_flat", "E_sharp"));
             put(5.25f, List.of("F_demisharp"));
             put(5.75f, List.of("F_sharp_and_a_half"));
-            put(6f, List.of("F_sharp", "G_flat", "E-double_sharp"));
+            put(6f, List.of("F_sharp", "G_flat", "E_double_sharp"));
             put(6.25f, List.of("G_flat_and_a_half"));
-            put(6.75f, List.of("G-demiflat"));
-            put(7f, List.of("G", "A-double_flat", "F-sharp"));
-            put(7.25f, List.of("G-demisharp"));
-            put(7.75f, List.of("G-sharp_and_a_half"));
-            put(8f, List.of("G-sharp", "A-flat"));
-            put(8.25f, List.of("A-flat_and_a_half"));
-            put(8.75f, List.of("A-demiflat"));
-            put(9f, List.of("A", "B-double_flat", "G-double_sharp"));
-            put(9.25f, List.of("A-demisharp"));
-            put(9.75f, List.of("A-sharp_and_a_half"));
-            put(10f, List.of("A-sharp", "B-flat", "C-double_flat"));
-            put(10.25f, List.of("B-flat_and_a_half", "C-demiflat"));
-            put(10.75f, List.of("B-demiflat", "C-flat_and_a_half"));
-            put(11f, List.of("B", "C-flat", "A-double_sharp"));
+            put(6.75f, List.of("G_demiflat"));
+            put(7f, List.of("G", "A_double_flat", "F_sharp"));
+            put(7.25f, List.of("G_demisharp"));
+            put(7.75f, List.of("G_sharp_and_a_half"));
+            put(8f, List.of("G_sharp", "A_flat"));
+            put(8.25f, List.of("A_flat_and_a_half"));
+            put(8.75f, List.of("A_demiflat"));
+            put(9f, List.of("A", "B_double_flat", "G_double_sharp"));
+            put(9.25f, List.of("A_demisharp"));
+            put(9.75f, List.of("A_sharp_and_a_half"));
+            put(10f, List.of("A_sharp", "B_flat", "C_double_flat"));
+            put(10.25f, List.of("B_flat_and_a_half", "C_demiflat"));
+            put(10.75f, List.of("B_demiflat", "C_flat_and_a_half"));
+            put(11f, List.of("B", "C_flat", "A_double_sharp"));
         }
     };
 
@@ -142,7 +143,7 @@ public class IEEE1599App implements Callable<Void> {
     public Void call() throws Exception {
         try {
             if (instrumentsParams.size() != instrumentsNumber) {
-                throw new IllegalArgumentException("Number of instrumentsParams different from number of instruments, "
+                throw new IllegalArgumentException(" number of instrumentsParams different from number of instruments, "
                         + "please try again by entering the same number of instrumentsParams for as many instruments as there are");
             }
 
@@ -172,16 +173,10 @@ public class IEEE1599App implements Callable<Void> {
 
             formatter.format();
             FormatterUtils.saveXMLFile(formatter.getDocument());
-        } catch (IllegalArgumentException illegalArgumentException) {
-            this.logger.error(illegalArgumentException.getClass() + illegalArgumentException.getMessage());
-        } catch (NoSuchElementException noSuchElementException) {
-            this.logger.error(noSuchElementException.getClass() + noSuchElementException.getMessage());
-        } catch (ParserConfigurationException parserConfigurationException) {
-            this.logger.error(parserConfigurationException.getClass() + parserConfigurationException.getMessage());
-        } catch (TransformerException transformerException) {
-            this.logger.error(transformerException.getClass() + transformerException.getMessage());
+        } catch (IllegalArgumentException | NoSuchElementException | ParserConfigurationException | TransformerException exceptionThrown) {
+            IEEE1599App.logger.error(exceptionThrown.getClass() + ":" + exceptionThrown.getMessage());
         } catch (Exception exception) {
-            this.logger.error("The program terminated due to the exception " + exception.getClass());
+            IEEE1599App.logger.error("The program terminated due to the exception " + exception.getClass());
         }
         return null;
     }

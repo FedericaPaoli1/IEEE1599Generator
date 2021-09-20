@@ -29,7 +29,7 @@ import org.w3c.dom.Element;
  */
 public class FormatterUtils {
 
-    private static Logger logger = LogManager.getLogger(FormatterUtils.class.getName());
+    private static final Logger logger = LogManager.getLogger(FormatterUtils.class.getName());
 
     /**
      * <p>
@@ -37,6 +37,7 @@ public class FormatterUtils {
      * child element
      * </p>
      *
+     * @param document the input document
      * @param element the element whose child is to be appended
      * @param childName the string constituting the name of the child
      * @param firstAttributeName the string constituting the first attribute
@@ -73,6 +74,7 @@ public class FormatterUtils {
      * child element
      * </p>
      *
+     * @param document the input document
      * @param element the element whose child is to be appended
      * @param childName the string constituting the name of the child
      * @param firstAttributeName the string constituting the first attribute
@@ -107,6 +109,7 @@ public class FormatterUtils {
      * child element
      * </p>
      *
+     * @param document the input document
      * @param element the element whose child is to be appended
      * @param childName the string constituting the name of the child
      * @param firstAttributeName the string constituting the first attribute
@@ -134,6 +137,7 @@ public class FormatterUtils {
      * child element
      * </p>
      *
+     * @param document the input document
      * @param element the element whose child is to be appended
      * @param childName the string constituting the name of the child
      * @param firstAttributeName the string constituting the first attribute
@@ -164,6 +168,7 @@ public class FormatterUtils {
      * child element
      * </p>
      *
+     * @param document the input document
      * @param element the element whose child is to be appended
      * @param childName the string constituting the name of the child
      * @param attributeName the string constituting the attribute name
@@ -187,6 +192,7 @@ public class FormatterUtils {
      * child element
      * </p>
      *
+     * @param document the input document
      * @param element the element whose child is to be appended
      * @param childName the string constituting the name of the child
      * @param textContent the string constituting the text content
@@ -204,6 +210,7 @@ public class FormatterUtils {
      * adds a child element to the input element
      * </p>
      *
+     * @param document the input document
      * @param element the element whose child is to be appended
      * @param childName the string constituting the name of the child
      *
@@ -219,6 +226,7 @@ public class FormatterUtils {
      * adds a child element to the input element and returns it
      * </p>
      *
+     * @param document the input document
      * @param element the element whose child is to be appended
      * @param childName the string constituting the name of the child
      *
@@ -237,6 +245,7 @@ public class FormatterUtils {
      * adds the IEEE1599 element of the general layer to the IEEE1599 document
      * </p>
      *
+     * @param document the input document
      * @param creator the value of the creator attribute of the ieee1599 element
      * @param version the value of the version attribute of the ieee1599 element
      *
@@ -322,8 +331,8 @@ public class FormatterUtils {
         try {
             docBuilder = docFactory.newDocumentBuilder();
         } catch (ParserConfigurationException ex) {
-            logger.error(ex.getClass() + "The document cannot be created due to a configuration error.");
-            throw new ParserConfigurationException("The document cannot be created due to a configuration error.");
+            logger.error(ex.getClass() + " : the document cannot be created due to a configuration error");
+            throw new ParserConfigurationException(" the document cannot be created due to a configuration error");
         }
         return docBuilder.newDocument();
 
@@ -352,11 +361,11 @@ public class FormatterUtils {
             t.setOutputProperty("{http://xml.apache.org/xslt}indent-amount", "3");
             t.transform(input, output);
         } catch (TransformerConfigurationException ex) {
-            logger.error(ex.getClass() + "The document cannot be created due to a configuration error.");
-            throw new TransformerConfigurationException("The document cannot be created due to a configuration error.");
+            logger.error(ex.getClass() + " : the document cannot be created due to a configuration error");
+            throw new TransformerConfigurationException(" the document cannot be created due to a configuration error");
         } catch (TransformerException ex) {
-            logger.error(ex.getClass() + "The document cannot be created due to a configuration error.");
-            throw new TransformerException("The document cannot be created due to a configuration error.");
+            logger.error(ex.getClass() + " : the document cannot be created due to a configuration error");
+            throw new TransformerException(" the document cannot be created due to a configuration error");
         }
     }
 
@@ -365,6 +374,8 @@ public class FormatterUtils {
      * converts the input map content into a string
      * </p>
      *
+     * @param <T> the type of arguments to the map
+     * @param <R> the type of arguments to the map
      * @param map the input map
      *
      * @return the formatted string

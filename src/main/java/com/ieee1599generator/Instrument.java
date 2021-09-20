@@ -2,7 +2,6 @@ package com.ieee1599generator;
 
 import java.util.Map;
 import java.util.TreeMap;
-import java.util.stream.Collectors;
 
 /**
  * Represents a musical instrument
@@ -116,7 +115,7 @@ public class Instrument {
                 + ", maximum numbers of notes in a chord: " + this.maxNumberOfNotesInAChord
                 + ", are irregular groups present? " + this.areIrregularGroupsPresent
                 + ", minimum delay: " + this.minimumDelay
-                + ", notes map:\n" + FormatterUtils.mapAsString(this.notesMap)
+                + ", notes map:\n" + FormatterUtils.instrumentNotesMapAsString(this.notesMap)
                 + "\nmaximum number of events: " + this.maxNumberOfEvents;
     }
 

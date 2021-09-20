@@ -87,6 +87,7 @@ public class Randomizer {
      * picks a random element from the input list
      * </p>
      *
+     * @param <T> the type of arguments to the list
      * @param inputList the input list
      * 
      * @return a random element from the input list
@@ -169,6 +170,7 @@ public class Randomizer {
      * mixes the elements of the inputList
      * </p>
      *
+     * @param <T> the type of arguments to the list
      * @param inputList the input list
      * 
      */
