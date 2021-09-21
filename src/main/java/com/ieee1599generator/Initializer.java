@@ -34,6 +34,11 @@ public class Initializer {
 
         this.metreInNumbers = new int[]{Integer.parseInt(String.valueOf(metre.charAt(0))), Integer.parseInt(String.valueOf(metre.charAt(2)))};
         this.measuresNumber = computeMeasuresNumber(bpm, trackLength, this.metreInNumbers);
+        
+        if(this.measuresNumber == 0) {
+            throw new IllegalArgumentException(" track length too small compared to the bpm and metre used, "
+                        + "please try again by entering different inputs");
+        }
 
         // fill the map of the irregular groups
         if (this.metreInNumbers[0] % 3 == 0 && this.metreInNumbers[1] % 2 == 0) {   // check if time signature is compound

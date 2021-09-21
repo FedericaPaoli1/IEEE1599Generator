@@ -238,13 +238,18 @@ public class Formatter {
         int notesNumber = this.randomizer.getRandomInteger(1, this.instruments.get(i).getMaxNumberOfPlayedNotes());
         Formatter.logger.info("Notes number: " + notesNumber);
 
+        if (notesNumber > this.randomEventsPerInstrumentMap.get(i)[0]) {
+            notesNumber = this.randomEventsPerInstrumentMap.get(i)[0];
+        }
+
         // random number of rests of the actual instrument
         int restsNumber = this.randomEventsPerInstrumentMap.get(i)[0] - notesNumber;
+        Formatter.logger.info("Events number: " + this.randomEventsPerInstrumentMap.get(i)[0]);
         Formatter.logger.info("Rests number: " + restsNumber);
 
         List<Character> notesAndRests = createNotesAndRestsList(this.randomEventsPerInstrumentMap.get(i)[0], notesNumber, restsNumber);
         this.randomizer.shuffleList(notesAndRests);
-        Formatter.logger.info("Notes and rests: " + notesAndRests.stream().map(Object::toString).collect(Collectors.joining(", ")));
+        Formatter.logger.info("Total of notes and rests: " + notesAndRests.size());
 
         for (int j = 1; j <= this.measuresNumber; j++) {
             Formatter.logger.info("MEASURE " + j);
@@ -291,21 +296,18 @@ public class Formatter {
         List<Double> correctNotesAndRests = selectCorrectNotesAndRests(i, eventsNumberInAMeasure, notesMapKeysList);
 
         for (int k = 0; k < eventsNumberInAMeasure; k++) {
-            char actualCharacter;
 
-            if (notesAndRests.size() == 1) {
-                actualCharacter = notesAndRests.get(0);
-            } else {
-                actualCharacter = notesAndRests.remove(0);
-            }
+            if (!notesAndRests.isEmpty()) {
+                char actualCharacter = notesAndRests.remove(0);
 
-            if (actualCharacter == 'N') {
-                Formatter.logger.debug("Create chord elements");
-                createChordElements(i, j, k, voice, notesInAChord, correctNotesAndRests, randomPitch);
+                if (actualCharacter == 'N') {
+                    Formatter.logger.debug("Create chord elements");
+                    createChordElements(i, j, k, voice, notesInAChord, correctNotesAndRests, randomPitch);
 
-            } else {
-                Formatter.logger.debug("Create rest elements");
-                createRestElements(i, j, k, voice, correctNotesAndRests);
+                } else {
+                    Formatter.logger.debug("Create rest elements");
+                    createRestElements(i, j, k, voice, correctNotesAndRests);
+                }
             }
         }
     }
@@ -323,14 +325,17 @@ public class Formatter {
      */
     private List<Double> selectCorrectNotesAndRests(int i, int eventsNumberInAMeasure, List<Double> notesMapKeysList) {
         List<Double> correctNotesAndRests;
-        if (this.instruments.get(i).getMinDuration()[1] < eventsNumberInAMeasure) {
+        double timesMinDurationInMeasure = ((double) this.metreInNumbers[0] / this.metreInNumbers[1]) * this.instruments.get(i).getMinDuration()[1];
+        double timesMaxDurationInMeasure = ((double) this.metreInNumbers[0] / this.metreInNumbers[1]) * this.instruments.get(i).getMaxDuration()[1];
+        if (timesMinDurationInMeasure < eventsNumberInAMeasure) {
             correctNotesAndRests = new ArrayList<>();
-        } else if (this.instruments.get(i).getMaxDuration()[1] > eventsNumberInAMeasure) {
+        } else if (timesMaxDurationInMeasure > eventsNumberInAMeasure) {
             correctNotesAndRests = new ArrayList<>();
-        } else if (this.instruments.get(i).getMinDuration()[1] == eventsNumberInAMeasure) {
-            correctNotesAndRests = Collections.nCopies(eventsNumberInAMeasure, (double) this.instruments.get(i).getMinDuration()[0] / this.instruments.get(i).getMinDuration()[1]);
-        } else if (this.instruments.get(i).getMaxDuration()[1] == eventsNumberInAMeasure) {
-            correctNotesAndRests = Collections.nCopies(eventsNumberInAMeasure, (double) this.instruments.get(i).getMaxDuration()[0] / this.instruments.get(i).getMaxDuration()[1]);
+        } else if (timesMinDurationInMeasure == eventsNumberInAMeasure) {
+            correctNotesAndRests = new ArrayList<>(Collections.nCopies(eventsNumberInAMeasure, (double) this.instruments.get(i).getMinDuration()[0] / this.instruments.get(i).getMinDuration()[1]));
+        } else if (timesMaxDurationInMeasure == eventsNumberInAMeasure) {
+            correctNotesAndRests = new ArrayList<>(Collections.nCopies(eventsNumberInAMeasure, (double) this.instruments.get(i).getMaxDuration()[0] / this.instruments.get(i).getMaxDuration()[1]));
+
         } else {
             correctNotesAndRests = selectNotes(eventsNumberInAMeasure, notesMapKeysList, this.instruments.get(i).getMinDuration()[1]);
         }
@@ -378,7 +383,7 @@ public class Formatter {
         int remainingEvents = eventsNumberInAMeasure;
         int notesMapKeysListIndex = 0;
 
-        while (remainingDuration != 0) {
+        while (remainingDuration > 0.001) {
 
             double noteKey = notesMapKeysList.get(notesMapKeysListIndex);
             // subtract from remainingDuration the duration of the note being considered
@@ -430,12 +435,7 @@ public class Formatter {
             Formatter.logger.debug("Add rest element");
             Element rest = FormatterUtils.addElementAndSetOneAttributeReturningTheElement(this.document, voice, "rest", "event_ref", eventRef);
 
-            double randomNote;
-            if (correctNotesAndRests.size() == 1) {
-                randomNote = correctNotesAndRests.get(0);
-            } else {
-                randomNote = correctNotesAndRests.remove(0);
-            }
+            double randomNote = correctNotesAndRests.remove(0);
             Formatter.logger.info("Random note: " + randomNote);
 
             createRestDurationElement(i, randomNote, rest, k, event);
@@ -510,12 +510,7 @@ public class Formatter {
             Formatter.logger.debug("Add chord element");
             Element chord = FormatterUtils.addElementAndSetOneAttributeReturningTheElement(this.document, voice, "chord", "event_ref", eventRef);
 
-            double randomNote;
-            if (correctNotesAndRests.size() == 1) {
-                randomNote = correctNotesAndRests.get(0);
-            } else {
-                randomNote = correctNotesAndRests.remove(0);
-            }
+            double randomNote = correctNotesAndRests.remove(0);
             Formatter.logger.info("Random note: " + randomNote);
 
             // random irregular group from the map
@@ -622,7 +617,7 @@ public class Formatter {
      */
     private List<Character> createNotesAndRestsList(int eventsNumber, int notesNumberInAMeasure, int restsNumberInAMeasure) {
         List<Character> notesAndRests = new ArrayList<>();
-        int countNotes = 1, countRests = 1;
+        int countNotes = 0, countRests = 0;
 
         for (int e = 0; e < eventsNumber; e++) {
             while (countNotes < notesNumberInAMeasure) {
@@ -778,7 +773,7 @@ public class Formatter {
     private void addPitchElement(float randomPitch, Element notehead, int i) {
 
         String randomAccidental = this.randomizer.getRandomStringFromMap(accidentalMap);
-        
+
         Element pitch = FormatterUtils.addElementToDocument(this.document, "pitch");
 
         int randomOctave = this.randomizer.getRandomInteger(Integer.parseInt(this.instruments.get(i).getMinHeight().replaceAll("[^\\d-]", "")), Integer.parseInt(this.instruments.get(i).getMaxHeight().replaceAll("[^\\d-]", "")));
@@ -889,7 +884,7 @@ public class Formatter {
             if (eventsNumber < this.measuresNumber) {
                 eventsNumber = this.measuresNumber;
             }
-            Formatter.logger.info("Events number for the instrument " + i + " :" + eventsNumber);
+            Formatter.logger.info("Events number for the instrument " + (i + 1) + " :" + eventsNumber);
 
             int eventsNumberInAMeasure = eventsNumber / this.measuresNumber;
 
