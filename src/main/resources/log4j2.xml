@@ -3,7 +3,7 @@
     <Appenders>
         <Console name="ConsoleAppender" target="SYSTEM_OUT">
             <PatternLayout
-                pattern="%d [%t] %highlight{%-5level}{FATAL=bg_red, ERROR=red, WARN=yellow, INFO=green} %logger{36} - %msg%n%throwable"/>
+                pattern="%d [%t] %highlight{%-5level}{ERROR=red, INFO=blue, DEBUG=green} %logger{36} - %msg%n%throwable"  /> 
         </Console>
         <File name="FileAppender" fileName="ieee1599.log" immediateFlush="true" append="false">
             <PatternLayout

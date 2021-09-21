@@ -137,7 +137,7 @@ public class IEEE1599App implements Callable<Void> {
      * document in IEEE1599 format.
      * </p>
      *
-     * @throws Exception
+     * @throws Exception if there is an exception that causes the end of the program
      */
     @Override
     public Void call() throws Exception {

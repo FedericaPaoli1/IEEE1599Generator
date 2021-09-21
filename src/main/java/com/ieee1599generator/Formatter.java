@@ -309,6 +309,7 @@ public class Formatter {
                     createRestElements(i, j, k, voice, correctNotesAndRests);
                 }
             }
+            
         }
     }
 
