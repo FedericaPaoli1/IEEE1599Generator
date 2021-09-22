@@ -309,7 +309,6 @@ public class Formatter {
                     createRestElements(i, j, k, voice, correctNotesAndRests);
                 }
             }
-            
         }
     }
 
@@ -790,7 +789,7 @@ public class Formatter {
 
         // change octave if the random pitch is higher than the input maximum height
         if (randomPitch > maxHeightPitch) {
-            randomOctave += this.randomizer.getRandomInteger(Integer.parseInt(this.instruments.get(i).getMinHeight().replaceAll("[^\\d-]", "")), (int) (randomPitch - maxHeightPitch));
+            randomOctave = this.randomizer.getRandomInteger(Integer.parseInt(this.instruments.get(i).getMinHeight().replaceAll("[^\\d-]", "")), (int) (randomPitch - maxHeightPitch));
         }
 
         // get the true pitch from which the random one has the minimum distance
@@ -864,7 +863,35 @@ public class Formatter {
         List<Integer> randomInstruments = this.randomizer.getRandomNonRepeatingIntegers(instrumentsNumber, 0, instrumentsNumber - 1);
 
         Formatter.logger.debug("Add all the events to the spine container");
-        defineOtherEvents(randomInstruments, spine);
+        Map<Integer, List<List<Integer>>> events = defineOtherEvents(randomInstruments);
+        Map<Integer, List<Integer>> measuresEvents = new HashMap<>();
+
+        
+        // add event elements to the document mixing them
+        for (int j = 0; j < this.measuresNumber; j++) {
+
+            // for each instrument, retrieve the corresponding key and list of events for the current measure
+            for (Integer key : events.keySet()) {
+                measuresEvents.put(key, events.get(key).get(j));
+            }
+
+            int ev;
+            int key;
+            
+            while (!measuresEvents.isEmpty()) {
+                key = this.randomizer.getRandomIntFromMap(measuresEvents);
+                List<Integer> singleInstrumentEvents = measuresEvents.get(key);
+                
+                if (singleInstrumentEvents.isEmpty()) {
+                    measuresEvents.remove(key);
+                    continue;
+                }
+                ev = singleInstrumentEvents.remove(0);
+
+                Element event = FormatterUtils.addElementAndSetOneAttributeReturningTheElement(this.document, spine, "event", "id", "Instrument_" + key + "_voice0_measure" + (j + 1) + "_ev" + ev);
+                this.eventsList.add(event);
+            }
+        }
 
     }
 
@@ -877,7 +904,11 @@ public class Formatter {
      * @param spine the element whose child is to be appended
      *
      */
-    private void defineOtherEvents(List<Integer> randomInstruments, Element spine) {
+    private Map<Integer, List<List<Integer>>> defineOtherEvents(List<Integer> randomInstruments) {
+        // map with key equal to the instrument i and value equal to a list of j lists of k events, where j is the number of measure 
+        // for the instrument i and k is the number of events for the measure j of the instrument i
+        Map<Integer, List<List<Integer>>> events = new HashMap<>();
+
         for (int i = 0; i < randomInstruments.size(); i++) {
 
             // number of events concerning the actual instrument in the actual measure
@@ -893,6 +924,7 @@ public class Formatter {
 
             int kIndex;
 
+            List<List<Integer>> singleEventsList = new ArrayList<>();
             for (int j = 1; j <= this.measuresNumber; j++) {
 
                 // two indexes to differentiate differentiate between adding events after the first and adding events from 0 onwards
@@ -902,14 +934,17 @@ public class Formatter {
                     kIndex = 0;
                 }
 
+                List<Integer> singleEvents = new ArrayList<>();
                 for (int k = kIndex; k < eventsNumberInAMeasure; k++) {
-
-                    Element event = FormatterUtils.addElementAndSetOneAttributeReturningTheElement(this.document, spine, "event", "id", "Instrument_" + (randomInstruments.get(i) + 1) + "_voice0_measure" + j + "_ev" + k);
-
-                    this.eventsList.add(event);
+                    singleEvents.add(k);
                 }
+                
+                singleEventsList.add(singleEvents);
+                events.put(randomInstruments.get(i) + 1, singleEventsList);
             }
         }
+
+        return events;
     }
 
     /**

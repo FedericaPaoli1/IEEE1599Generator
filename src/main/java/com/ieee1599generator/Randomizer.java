@@ -198,13 +198,15 @@ public class Randomizer {
      * provides a random integer from the input map
      * </p>
      *
+     * @param <T> the type of arguments to the map
      * @param inputMap the input map
      * 
      * @return a random integer from the input map
      */
-    protected int getRandomIntFromMap(Map<Integer, Integer> inputMap) {
+    protected <T> int getRandomIntFromMap(Map<Integer, T> inputMap) {
         Integer[] keySetArray = inputMap.keySet().toArray(new Integer[inputMap.keySet().size()]);
         int randomIndex = this.random.nextInt(inputMap.keySet().size());
         return keySetArray[randomIndex];
     }
+    
 }
