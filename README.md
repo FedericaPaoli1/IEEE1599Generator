@@ -1,5 +1,5 @@
 <!-- PROJECT SHIELDS -->
-[![MIT License](https://img.shields.io/github/license/FedericaPaoli1/IEEE1599Generator.svg?branch=master)](https://github.com/FedericaPaoli1/IEEE1599Generator/LICENSE)
+[![MIT License](https://img.shields.io/github/license/FedericaPaoli1/IEEE1599Generator.svg?branch=main)](https://github.com/FedericaPaoli1/IEEE1599Generator/LICENSE)
 
 
 <!-- PROJECT LOGO -->
