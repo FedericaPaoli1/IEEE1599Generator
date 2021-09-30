@@ -43,7 +43,7 @@
 <!-- ABOUT THE PROJECT -->
 ## About The Project
 
-IEEE 1599 random generator: application which, on the basis of a series of user-definable parameters, generates an IEEE 1599 file by randomly the elements present. 
+IEEE1599Generator is a project developed for the Music Programming exam at the University of Milan (academic year 2020-2021). It is an application which, on the basis of a series of user-definable parameters, generates an IEEE 1599 file by randomly the elements present. 
 
 ### Built With
 
